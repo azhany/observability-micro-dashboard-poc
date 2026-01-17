@@ -18,8 +18,9 @@ return new class extends Migration
             $table->string('metric_name', 64);
             $table->double('value', 16, 4);
             $table->timestamp('timestamp', 6);
-            $table->string('dedupe_id', 128)->nullable()->unique();
+            $table->string('dedupe_id', 128)->nullable();
 
+            $table->unique(['tenant_id', 'dedupe_id']);
             $table->index(['tenant_id', 'metric_name', 'timestamp'], 'idx_tenant_metric_time');
 
             $table->foreign('tenant_id')->references('id')->on('tenants')->onDelete('cascade');

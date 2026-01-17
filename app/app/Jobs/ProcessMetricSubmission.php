@@ -50,27 +50,37 @@ class ProcessMetricSubmission implements ShouldQueue
      */
     public function handle(): void
     {
-        DB::transaction(function () {
-            foreach ($this->metrics as $metricData) {
-                $data = [
-                    'tenant_id' => $this->tenant->id,
-                    'agent_id' => $metricData['agent_id'],
-                    'metric_name' => $metricData['metric_name'],
-                    'value' => $metricData['value'],
-                    'timestamp' => $metricData['timestamp'],
-                    'dedupe_id' => $metricData['dedupe_id'] ?? null,
-                ];
+        $metricsToUpsert = [];
+        $metricsToInsert = [];
 
-                if (isset($metricData['dedupe_id']) && $metricData['dedupe_id'] !== null) {
-                    // Use upsert for deduplication
-                    Metric::updateOrCreate(
-                        ['dedupe_id' => $metricData['dedupe_id']],
-                        $data
-                    );
-                } else {
-                    // Always insert when no dedupe_id
-                    Metric::create($data);
-                }
+        foreach ($this->metrics as $metricData) {
+            $data = [
+                'tenant_id' => $this->tenant->id,
+                'agent_id' => $metricData['agent_id'],
+                'metric_name' => $metricData['metric_name'],
+                'value' => $metricData['value'],
+                'timestamp' => $metricData['timestamp'],
+                'dedupe_id' => $metricData['dedupe_id'] ?? null,
+            ];
+
+            if (!empty($data['dedupe_id'])) {
+                $metricsToUpsert[] = $data;
+            } else {
+                $metricsToInsert[] = $data;
+            }
+        }
+
+        DB::transaction(function () use ($metricsToUpsert, $metricsToInsert) {
+            if (!empty($metricsToUpsert)) {
+                Metric::upsert(
+                    $metricsToUpsert,
+                    ['tenant_id', 'dedupe_id'],
+                    ['agent_id', 'metric_name', 'value', 'timestamp']
+                );
+            }
+
+            if (!empty($metricsToInsert)) {
+                Metric::insert($metricsToInsert);
             }
         });
 

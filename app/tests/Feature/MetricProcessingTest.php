@@ -274,4 +274,51 @@ class MetricProcessingTest extends TestCase
         $metric = Metric::where('dedupe_id', $dedupeId)->first();
         $this->assertEquals(85.0, $metric->value);
     }
+
+    public function test_dedupe_id_is_isolated_per_tenant(): void
+    {
+        $tenant2 = Tenant::create([
+            'name' => 'Second Tenant',
+            'settings' => [],
+        ]);
+
+        $dedupeId = 'shared-dedupe-id';
+
+        // Tenant 1 submission
+        $metricData1 = [
+            'agent_id' => 'agent-001',
+            'metric_name' => 'cpu_usage',
+            'value' => 10.0,
+            'timestamp' => '2026-01-18T10:00:00.000000Z',
+            'dedupe_id' => $dedupeId,
+        ];
+
+        (new ProcessMetricSubmission($this->tenant, [$metricData1]))->handle();
+
+        // Tenant 2 submission with SAME dedupe_id
+        $metricData2 = [
+            'agent_id' => 'agent-002',
+            'metric_name' => 'cpu_usage',
+            'value' => 20.0,
+            'timestamp' => '2026-01-18T10:00:00.000000Z',
+            'dedupe_id' => $dedupeId,
+        ];
+
+        (new ProcessMetricSubmission($tenant2, [$metricData2]))->handle();
+
+        // Assert BOTH records exist (Dedupe should be per-tenant)
+        $this->assertEquals(2, Metric::count(), 'Dedupe ID should be isolated per tenant');
+        
+        $this->assertDatabaseHas('metrics_raw', [
+            'tenant_id' => $this->tenant->id,
+            'dedupe_id' => $dedupeId,
+            'value' => 10.0
+        ]);
+
+        $this->assertDatabaseHas('metrics_raw', [
+            'tenant_id' => $tenant2->id,
+            'dedupe_id' => $dedupeId,
+            'value' => 20.0
+        ]);
+    }
 }

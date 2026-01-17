@@ -1,0 +1,55 @@
+schema: 1
+story: "1.4"
+story_title: "Ingestion Processing & Idempotency"
+gate: "PASS"
+status_reason: "Implementation is robust with proper high-precision timestamp handling and bulk-optimized job processing. Critical multi-tenancy deduplication bug was fixed during review."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-01-18T12:00:00Z"
+
+waiver: { active: false }
+
+top_issues: []
+
+risk_summary:
+  totals:
+    critical: 0
+    high: 0
+    medium: 1
+    low: 3
+  highest:
+    id: PERF-001
+    score: 4
+    title: 'DB lock contention on high-concurrency upserts'
+  recommendations:
+    must_fix: []
+    monitor:
+      - 'Monitor DB lock contention and queue depth'
+
+quality_score: 90
+expires: "2026-02-01T12:00:00Z"
+
+evidence:
+  tests_reviewed: 10
+  risks_identified: 5
+  trace:
+    ac_covered: [1, 2, 3, 4]
+    ac_gaps: []
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: "Tenant isolation for deduplication is enforced via composite unique index."
+  performance:
+    status: PASS
+    notes: "Bulk upsert implemented for efficient processing of up to 1000 items."
+  reliability:
+    status: PASS
+    notes: "Database transactions ensure atomicity; exponential backoff handles transient failures."
+  maintainability:
+    status: PASS
+    notes: "Clean code with dedicated integration tests covering all ACs and edge cases."
+
+recommendations:
+  future:
+    - action: "Monitor MariaDB Slow_queries for upsert operations under high load"
+      refs: ["app/Jobs/ProcessMetricSubmission.php"]
