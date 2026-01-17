@@ -31,9 +31,9 @@ class StreamTest extends TestCase
 
     public function test_unauthenticated_user_cannot_access_stream(): void
     {
-        $response = $this->get("/api/v1/stream/{$this->tenant->id}");
+        $response = $this->getJson("/api/v1/stream/{$this->tenant->id}");
 
-        $response->assertStatus(500);
+        $response->assertStatus(401);
     }
 
     public function test_authenticated_user_can_access_stream(): void

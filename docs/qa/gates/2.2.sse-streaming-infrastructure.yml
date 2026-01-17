@@ -1,0 +1,50 @@
+schema: 1
+story: '2.2'
+story_title: 'SSE Streaming Infrastructure'
+gate: CONCERNS
+status_reason: 'Functional but has critical performance risk (worker starvation) and missing tenant isolation (IDOR).'
+reviewer: 'Quinn (Test Architect)'
+updated: '2026-01-18T10:30:00Z'
+
+top_issues:
+  - id: PERF-001
+    severity: high
+    title: 'PHP-FPM Worker Starvation'
+    description: 'Long-lived SSE connections will exhaust PHP-FPM pool, blocking other requests.'
+    suggested_owner: 'dev'
+  - id: SEC-001
+    severity: high
+    title: 'Missing Tenant Authorization'
+    description: 'Any logged-in user can stream any tenant metrics (IDOR). Missing User-Tenant relationship.'
+    suggested_owner: 'po'
+
+waiver: { active: false }
+
+evidence:
+  tests_reviewed: 8
+  risks_identified: 6
+  trace:
+    ac_covered: [1, 2, 3, 4]
+    ac_gaps: []
+
+nfr_validation:
+  security:
+    status: FAIL
+    notes: 'Authenticated users can access any tenant stream (IDOR).'
+  performance:
+    status: FAIL
+    notes: 'Blocking loop in controller prevents scaling.'
+  reliability:
+    status: PASS
+    notes: 'Connection cleanup handles disconnects.'
+  maintainability:
+    status: PASS
+    notes: 'Clean separation of Job and Controller.'
+
+recommendations:
+  immediate:
+    - action: 'Limit SSE connection duration or use Octane'
+      refs: ['app/Http/Controllers/StreamController.php']
+  future:
+    - action: 'Implement User-Tenant relationship and policy'
+      refs: ['app/Models/User.php', 'app/Models/Tenant.php']
