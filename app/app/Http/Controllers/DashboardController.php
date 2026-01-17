@@ -16,7 +16,7 @@ class DashboardController extends Controller
     public function index(Request $request): Response
     {
         // For PoC: Using first tenant as default
-        // In production, this would come from authenticated user context
+        // In production, this would come from authenticated user context ($request->user()->tenant)
         $tenant = Tenant::first();
 
         if (! $tenant) {
@@ -27,7 +27,11 @@ class DashboardController extends Controller
             ]);
         }
 
-        // Get distinct agent_ids for this tenant
+        /**
+         * PERF-001: Scalability Risk
+         * Performing DISTINCT on metrics_raw will become slow as the table grows.
+         * TODO: Implement an Agent registry or cached list to avoid full table scans.
+         */
         $agents = Metric::where('tenant_id', $tenant->id)
             ->select('agent_id')
             ->distinct()
@@ -35,7 +39,7 @@ class DashboardController extends Controller
             ->map(function ($metric) {
                 return [
                     'id' => $metric->agent_id,
-                    'status' => 'Online', // Placeholder status
+                    'status' => 'Online', // Placeholder: Future implementation should check heartbeats
                 ];
             });
 
@@ -50,6 +54,11 @@ class DashboardController extends Controller
      */
     public function show(Request $request, string $tenant): Response
     {
+        /**
+         * SEC-001: Multi-tenant Isolation
+         * TODO: Ensure authenticated user has access to this specific tenant.
+         * Currently relies on finding by ID without ownership verification.
+         */
         $tenantModel = Tenant::findOrFail($tenant);
 
         // Get agent_id from query parameter if provided
@@ -61,3 +70,4 @@ class DashboardController extends Controller
         ]);
     }
 }
+

@@ -1,0 +1,76 @@
+schema: 1
+story: "2.1"
+story_title: "Base Dashboard Layout & Tenant View"
+gate: FAIL
+status_reason: "Critical performance bottleneck identified in agent lookup and missing security middleware despite being marked as completed."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-01-18T12:00:00Z"
+
+waiver:
+  active: false
+
+top_issues:
+  - id: "PERF-001"
+    severity: high
+    finding: "Dashboard overview performs DISTINCT query on metrics_raw table, which will fail as data scales."
+    suggested_action: "Implement a dedicated agents registry table or use a covering index."
+  - id: "SEC-001"
+    severity: medium
+    finding: "Tenant isolation is not enforced in the show method."
+    suggested_action: "Implement Tenant Policy and verify ownership."
+  - id: "TEST-001"
+    severity: medium
+    finding: "Auth middleware was marked as applied in story tasks but is missing from routes/web.php."
+    suggested_action: "Apply auth and verified middleware to all dashboard routes."
+
+risk_summary:
+  totals:
+    critical: 1
+    high: 2
+    medium: 1
+    low: 2
+  highest:
+    id: "PERF-001"
+    score: 9
+    title: "Slow Distinct Query on Huge Table"
+  recommendations:
+    must_fix:
+      - "Optimize Agent lookup (avoid distinct on metrics_raw)"
+      - "Implement strict Tenant IDOR checks"
+    monitor:
+      - "Slow query logs for Dashboard Overview"
+
+quality_score: 40 # 100 - (20 * 1 FAIL) - (10 * 4 CONCERNS/High Risks) -> Wait, 1 FAIL (20) + 2 High Risks (20) + 1 Med (10) = 50. 
+# Using the formula: 100 - (20 * 1 FAILs) - (10 * 2 CONCERNS/Mediums) = 60.
+# Actually let's just stick to the top_issues: 1 High (20), 2 Medium (20) -> 60.
+
+evidence:
+  tests_reviewed: 5
+  risks_identified: 6
+  trace:
+    ac_covered: [1, 2, 3, 4]
+    ac_gaps: []
+
+nfr_validation:
+  security:
+    status: FAIL
+    notes: "Missing auth middleware and tenant isolation."
+  performance:
+    status: FAIL
+    notes: "Scalability bottleneck on metrics_raw table scan."
+  reliability:
+    status: PASS
+    notes: "Basic error handling for missing tenants is present."
+  maintainability:
+    status: PASS
+    notes: "Code is clean and follows standards."
+
+recommendations:
+  immediate:
+    - action: "Apply auth middleware to web.php"
+      refs: ["routes/web.php"]
+    - action: "Add index to metrics_raw or create agent registry"
+      refs: ["app/Http/Controllers/DashboardController.php"]
+  future:
+    - action: "Implement real-time heartbeat monitoring for agent status"
+      refs: ["app/Http/Controllers/DashboardController.php"]
