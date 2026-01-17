@@ -1,0 +1,49 @@
+schema: 1
+story: '1.2'
+story_title: 'Multi-tenant Auth & API Token Management'
+gate: CONCERNS
+status_reason: 'Acceptance criteria met and tests passing, but critical risk DATA-001 (Cross-tenant Data Isolation) remains due to deferred global scoping implementation.'
+reviewer: 'Quinn (Test Architect)'
+updated: '2026-01-18T12:00:00Z'
+
+top_issues:
+  - id: DATA-001
+    severity: high
+    description: 'System relies on manual tenant filtering; global TenantScope is deferred. High risk of data leakage if developer forgets to filter.'
+    suggested_owner: dev
+  - id: PERF-001
+    severity: medium
+    description: 'Middleware updates last_used_at on every request (now throttled to 1min). Still a potential bottleneck for extremely high-volume ingestion.'
+    suggested_owner: dev
+
+quality_score: 80
+expires: '2026-02-01T12:00:00Z'
+
+evidence:
+  tests_reviewed: 4
+  risks_identified: 5
+  trace:
+    ac_covered: [1, 2, 3, 4]
+    ac_gaps: []
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: 'SHA-256 hashing correctly implemented; plain text tokens never stored.'
+  performance:
+    status: CONCERNS
+    notes: 'Added throttling to last_used_at updates to mitigate DB write overhead.'
+  reliability:
+    status: PASS
+    notes: 'Standard Laravel patterns used; tests cover error paths.'
+  maintainability:
+    status: PASS
+    notes: 'Code is clean and follows Laravel conventions.'
+
+recommendations:
+  immediate:
+    - action: 'Ensure next story implements global TenantScope'
+      refs: ['docs/stories/2.1.metric-ingestion.story.md']
+  future:
+    - action: 'Consider moving to Laravel Sanctum if requirements exceed simple token auth'
+      refs: ['app/composer.json']

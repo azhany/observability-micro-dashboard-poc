@@ -36,8 +36,10 @@ class AuthenticateTenantToken
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
-        // Update last_used_at timestamp
-        $tenantToken->update(['last_used_at' => now()]);
+        // Update last_used_at timestamp at most once per minute to reduce DB load
+        if ($tenantToken->last_used_at === null || $tenantToken->last_used_at->diffInMinutes(now()) >= 1) {
+            $tenantToken->update(['last_used_at' => now()]);
+        }
 
         // Bind the tenant to the request context
         $request->attributes->set('tenant', $tenantToken->tenant);
