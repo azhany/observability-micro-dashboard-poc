@@ -1,8 +1,8 @@
 <?php
 
+use App\Http\Controllers\HealthController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
-use App\Http\Controllers\HealthController;
 
 Route::get('/', function () {
     return Inertia::render('Welcome');
