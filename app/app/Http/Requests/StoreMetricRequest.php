@@ -30,6 +30,7 @@ class StoreMetricRequest extends FormRequest
         // If the root is an array (bulk submission), validate each item
         if ($this->isArrayOfMetrics($input)) {
             return [
+                '' => 'array|max:1000',
                 '*.metric_name' => 'required|string|max:64',
                 '*.value' => 'required|numeric',
                 '*.timestamp' => 'required|date',
@@ -63,6 +64,7 @@ class StoreMetricRequest extends FormRequest
             'value.numeric' => 'The metric value must be a number.',
             'timestamp.required' => 'The timestamp is required.',
             'timestamp.date' => 'The timestamp must be a valid date.',
+            '.max' => 'The number of metrics may not exceed 1000.',
             '*.metric_name.required' => 'Each metric must have a metric name.',
             '*.metric_name.string' => 'Each metric name must be a string.',
             '*.metric_name.max' => 'Each metric name may not be greater than 64 characters.',

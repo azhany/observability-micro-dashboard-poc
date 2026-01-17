@@ -15,5 +15,5 @@ Route::prefix('v1')->middleware('auth.tenant')->group(function () {
     });
 
     // Metric Ingestion API
-    Route::post('/metrics', [MetricIngestionController::class, 'store']);
+    Route::post('/metrics', [MetricIngestionController::class, 'store'])->middleware('throttle:60,1');
 });
