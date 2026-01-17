@@ -2,17 +2,29 @@
 
 namespace App\Jobs;
 
+use App\Models\Metric;
 use App\Models\Tenant;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class ProcessMetricSubmission implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    /**
+     * The number of times the job may be attempted.
+     */
+    public $tries = 5;
+
+    /**
+     * The number of seconds to wait before retrying the job.
+     */
+    public $backoff = [10, 30, 60];
 
     /**
      * The tenant associated with this metric submission.
@@ -26,9 +38,6 @@ class ProcessMetricSubmission implements ShouldQueue
 
     /**
      * Create a new job instance.
-     *
-     * @param Tenant $tenant
-     * @param array $metrics
      */
     public function __construct(Tenant $tenant, array $metrics)
     {
@@ -38,19 +47,36 @@ class ProcessMetricSubmission implements ShouldQueue
 
     /**
      * Execute the job.
-     *
-     * @return void
      */
     public function handle(): void
     {
-        // Log the payload for now (DB persistence is in Story 1.4)
-        Log::info('Processing metric submission', [
-            'tenant_id' => $this->tenant->id,
-            'tenant_name' => $this->tenant->name,
-            'metric_count' => count($this->metrics),
-            'metrics' => $this->metrics,
-        ]);
+        DB::transaction(function () {
+            foreach ($this->metrics as $metricData) {
+                $data = [
+                    'tenant_id' => $this->tenant->id,
+                    'agent_id' => $metricData['agent_id'],
+                    'metric_name' => $metricData['metric_name'],
+                    'value' => $metricData['value'],
+                    'timestamp' => $metricData['timestamp'],
+                    'dedupe_id' => $metricData['dedupe_id'] ?? null,
+                ];
 
-        // TODO: Story 1.4 will implement actual database persistence
+                if (isset($metricData['dedupe_id']) && $metricData['dedupe_id'] !== null) {
+                    // Use upsert for deduplication
+                    Metric::updateOrCreate(
+                        ['dedupe_id' => $metricData['dedupe_id']],
+                        $data
+                    );
+                } else {
+                    // Always insert when no dedupe_id
+                    Metric::create($data);
+                }
+            }
+        });
+
+        Log::info('Processed metric submission', [
+            'tenant_id' => $this->tenant->id,
+            'metric_count' => count($this->metrics),
+        ]);
     }
 }

@@ -11,9 +11,6 @@ class MetricIngestionController extends Controller
 {
     /**
      * Store metrics (single or bulk) for ingestion.
-     *
-     * @param StoreMetricRequest $request
-     * @return JsonResponse
      */
     public function store(StoreMetricRequest $request): JsonResponse
     {
@@ -37,9 +34,6 @@ class MetricIngestionController extends Controller
 
     /**
      * Normalize the payload to always return an array of metrics.
-     *
-     * @param array $data
-     * @return array
      */
     private function normalizePayload(array $data): array
     {

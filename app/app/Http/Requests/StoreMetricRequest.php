@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
 class StoreMetricRequest extends FormRequest
@@ -78,13 +78,12 @@ class StoreMetricRequest extends FormRequest
     /**
      * Determine if the input is an array of metrics.
      *
-     * @param mixed $input
-     * @return bool
+     * @param  mixed  $input
      */
     private function isArrayOfMetrics($input): bool
     {
         // If it's not an array, it's a single metric
-        if (!is_array($input)) {
+        if (! is_array($input)) {
             return false;
         }
 
@@ -96,13 +95,13 @@ class StoreMetricRequest extends FormRequest
         // Check if it's an indexed array (numeric keys starting from 0)
         // vs an associative array (single metric with string keys)
         $keys = array_keys($input);
+
         return $keys === array_keys($keys);
     }
 
     /**
      * Handle a failed validation attempt.
      *
-     * @param  \Illuminate\Contracts\Validation\Validator  $validator
      * @return void
      *
      * @throws \Illuminate\Http\Exceptions\HttpResponseException
@@ -112,7 +111,7 @@ class StoreMetricRequest extends FormRequest
         throw new HttpResponseException(
             response()->json([
                 'error' => 'Validation failed',
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422)
         );
     }

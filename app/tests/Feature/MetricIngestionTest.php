@@ -15,6 +15,7 @@ class MetricIngestionTest extends TestCase
     use RefreshDatabase;
 
     private Tenant $tenant;
+
     private string $token;
 
     protected function setUp(): void
