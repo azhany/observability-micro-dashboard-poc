@@ -11,6 +11,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Redis;
 
 class ProcessMetricSubmission implements ShouldQueue
 {
@@ -87,6 +88,32 @@ class ProcessMetricSubmission implements ShouldQueue
         Log::info('Processed metric submission', [
             'tenant_id' => $this->tenant->id,
             'metric_count' => count($this->metrics),
+        ]);
+
+        $this->publishToRedis();
+    }
+
+    /**
+     * Publish processed metrics to Redis Pub/Sub for SSE streaming.
+     */
+    protected function publishToRedis(): void
+    {
+        $channel = "tenant.{$this->tenant->id}.metrics";
+
+        $metricsPayload = array_map(function ($metricData) {
+            return [
+                'agent_id' => $metricData['agent_id'],
+                'metric_name' => $metricData['metric_name'],
+                'value' => $metricData['value'],
+                'timestamp' => $metricData['timestamp'],
+            ];
+        }, $this->metrics);
+
+        Redis::publish($channel, json_encode($metricsPayload));
+
+        Log::debug('Published metrics to Redis', [
+            'channel' => $channel,
+            'metric_count' => count($metricsPayload),
         ]);
     }
 }
