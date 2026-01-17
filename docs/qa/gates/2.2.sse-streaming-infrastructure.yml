@@ -1,27 +1,17 @@
 schema: 1
 story: '2.2'
 story_title: 'SSE Streaming Infrastructure'
-gate: CONCERNS
-status_reason: 'Functional but has critical performance risk (worker starvation) and missing tenant isolation (IDOR).'
+gate: PASS
+status_reason: 'All critical risks (IDOR, Worker Starvation) have been mitigated with code changes and verified with tests.'
 reviewer: 'Quinn (Test Architect)'
-updated: '2026-01-18T10:30:00Z'
+updated: '2026-01-18T11:45:00Z'
 
-top_issues:
-  - id: PERF-001
-    severity: high
-    title: 'PHP-FPM Worker Starvation'
-    description: 'Long-lived SSE connections will exhaust PHP-FPM pool, blocking other requests.'
-    suggested_owner: 'dev'
-  - id: SEC-001
-    severity: high
-    title: 'Missing Tenant Authorization'
-    description: 'Any logged-in user can stream any tenant metrics (IDOR). Missing User-Tenant relationship.'
-    suggested_owner: 'po'
+top_issues: []
 
 waiver: { active: false }
 
 evidence:
-  tests_reviewed: 8
+  tests_reviewed: 9
   risks_identified: 6
   trace:
     ac_covered: [1, 2, 3, 4]
@@ -29,22 +19,20 @@ evidence:
 
 nfr_validation:
   security:
-    status: FAIL
-    notes: 'Authenticated users can access any tenant stream (IDOR).'
+    status: PASS
+    notes: 'IDOR fixed: User-Tenant relationship validated on stream access.'
   performance:
-    status: FAIL
-    notes: 'Blocking loop in controller prevents scaling.'
+    status: PASS
+    notes: 'Worker starvation mitigated via 60s max connection duration + heartbeat.'
   reliability:
     status: PASS
-    notes: 'Connection cleanup handles disconnects.'
+    notes: 'Heartbeats ensure dropped connections are detected by clients.'
   maintainability:
     status: PASS
-    notes: 'Clean separation of Job and Controller.'
+    notes: 'Authorization logic centralized in User model.'
 
 recommendations:
-  immediate:
-    - action: 'Limit SSE connection duration or use Octane'
-      refs: ['app/Http/Controllers/StreamController.php']
+  immediate: []
   future:
-    - action: 'Implement User-Tenant relationship and policy'
-      refs: ['app/Models/User.php', 'app/Models/Tenant.php']
+    - action: 'Consider migrating to Laravel Octane for true non-blocking streams'
+      refs: ['architecture/performance.md']
