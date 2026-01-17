@@ -27,6 +27,9 @@ class StreamTest extends TestCase
         ]);
 
         $this->user = User::factory()->create();
+
+        // Attach user to tenant for authorization
+        $this->user->tenants()->attach($this->tenant);
     }
 
     public function test_unauthenticated_user_cannot_access_stream(): void
@@ -42,6 +45,20 @@ class StreamTest extends TestCase
             ->get("/api/v1/stream/{$this->tenant->id}");
 
         $response->assertStatus(200);
+    }
+
+    public function test_user_cannot_access_stream_for_unauthorized_tenant(): void
+    {
+        // Create another tenant that the user does NOT belong to
+        $otherTenant = Tenant::create([
+            'name' => 'Other Tenant',
+            'settings' => [],
+        ]);
+
+        $response = $this->actingAs($this->user)
+            ->get("/api/v1/stream/{$otherTenant->id}");
+
+        $response->assertStatus(403);
     }
 
     public function test_stream_returns_correct_sse_headers(): void
