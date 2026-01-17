@@ -308,17 +308,17 @@ class MetricProcessingTest extends TestCase
 
         // Assert BOTH records exist (Dedupe should be per-tenant)
         $this->assertEquals(2, Metric::count(), 'Dedupe ID should be isolated per tenant');
-        
+
         $this->assertDatabaseHas('metrics_raw', [
             'tenant_id' => $this->tenant->id,
             'dedupe_id' => $dedupeId,
-            'value' => 10.0
+            'value' => 10.0,
         ]);
 
         $this->assertDatabaseHas('metrics_raw', [
             'tenant_id' => $tenant2->id,
             'dedupe_id' => $dedupeId,
-            'value' => 20.0
+            'value' => 20.0,
         ]);
     }
 }

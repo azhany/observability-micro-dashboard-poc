@@ -63,7 +63,7 @@ class ProcessMetricSubmission implements ShouldQueue
                 'dedupe_id' => $metricData['dedupe_id'] ?? null,
             ];
 
-            if (!empty($data['dedupe_id'])) {
+            if (! empty($data['dedupe_id'])) {
                 $metricsToUpsert[] = $data;
             } else {
                 $metricsToInsert[] = $data;
@@ -71,7 +71,7 @@ class ProcessMetricSubmission implements ShouldQueue
         }
 
         DB::transaction(function () use ($metricsToUpsert, $metricsToInsert) {
-            if (!empty($metricsToUpsert)) {
+            if (! empty($metricsToUpsert)) {
                 Metric::upsert(
                     $metricsToUpsert,
                     ['tenant_id', 'dedupe_id'],
@@ -79,7 +79,7 @@ class ProcessMetricSubmission implements ShouldQueue
                 );
             }
 
-            if (!empty($metricsToInsert)) {
+            if (! empty($metricsToInsert)) {
                 Metric::insert($metricsToInsert);
             }
         });
