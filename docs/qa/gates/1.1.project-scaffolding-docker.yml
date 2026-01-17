@@ -1,0 +1,48 @@
+schema: 1
+story: '1.1'
+story_title: 'Project Scaffolding & Docker Environment'
+gate: CONCERNS
+status_reason: 'Passed functional requirements but SEC-001 (Insecure default Docker configurations) remains a concern pending explicit localhost binding verification.'
+reviewer: 'Quinn (Test Architect)'
+updated: '2026-01-18T12:00:00Z'
+
+waiver: { active: false }
+
+top_issues:
+  - id: SEC-001
+    severity: high
+    finding: 'Potential external exposure of DB/Redis ports in docker-compose.yml'
+    suggested_action: 'Bind ports 3306 and 6379 explicitly to 127.0.0.1 in docker-compose.yml'
+    suggested_owner: dev
+
+risk_summary:
+  totals:
+    critical: 0
+    high: 1
+    medium: 4
+    low: 0
+  highest:
+    id: SEC-001
+    score: 6
+    title: 'Insecure default Docker configurations/secrets'
+  recommendations:
+    must_fix:
+      - 'Bind database and redis ports to 127.0.0.1'
+      - 'Externalize all secrets via .env and verify .gitignore'
+    monitor:
+      - 'Monitor container resource usage'
+
+evidence:
+  tests_reviewed: 1
+  risks_identified: 6
+  trace:
+    ac_covered: [1, 2, 3, 4]
+    ac_gaps: []
+
+recommendations:
+  immediate:
+    - action: 'Bind DB/Redis ports to 127.0.0.1'
+      refs: ['docker-compose.yml']
+  future:
+    - action: 'Resolve Port 80 conflict with Herd'
+      refs: ['docker-compose.yml']
