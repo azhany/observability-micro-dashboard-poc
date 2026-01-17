@@ -20,10 +20,15 @@ class DashboardTest extends TestCase
         // Create a tenant for testing
         $tenant = Tenant::factory()->create();
 
+        // Authenticate as a user
+        $user = \App\Models\User::factory()->create();
+        $this->actingAs($user);
+
         $response = $this->get('/dashboard');
 
         $response->assertStatus(200);
-        $response->assertInertia(fn (Assert $page) => $page->component('Dashboard/Overview')
+        $response->assertInertia(
+            fn (Assert $page) => $page->component('Dashboard/Overview')
         );
     }
 
@@ -34,12 +39,17 @@ class DashboardTest extends TestCase
     {
         $tenant = Tenant::factory()->create();
 
+        // Authenticate as a user
+        $user = \App\Models\User::factory()->create();
+        $this->actingAs($user);
+
         $response = $this->get("/dashboard/tenants/{$tenant->id}");
 
         $response->assertStatus(200);
-        $response->assertInertia(fn (Assert $page) => $page->component('Dashboard/TenantDetail')
-            ->has('tenant')
-            ->where('tenant.id', $tenant->id)
+        $response->assertInertia(
+            fn (Assert $page) => $page->component('Dashboard/TenantDetail')
+                ->has('tenant')
+                ->where('tenant.id', $tenant->id)
         );
     }
 
@@ -67,15 +77,20 @@ class DashboardTest extends TestCase
             'agent_id' => 'agent-1',
         ]);
 
+        // Authenticate as a user
+        $user = \App\Models\User::factory()->create();
+        $this->actingAs($user);
+
         $response = $this->get('/dashboard');
 
         $response->assertStatus(200);
-        $response->assertInertia(fn (Assert $page) => $page->component('Dashboard/Overview')
-            ->has('agents', 2)
-            ->where('agents.0.status', 'Online')
-            ->where('agents.1.status', 'Online')
-            ->has('tenant')
-            ->where('tenant.id', $tenant->id)
+        $response->assertInertia(
+            fn (Assert $page) => $page->component('Dashboard/Overview')
+                ->has('agents', 2)
+                ->where('agents.0.status', 'Online')
+                ->where('agents.1.status', 'Online')
+                ->has('tenant')
+                ->where('tenant.id', $tenant->id)
         );
 
         // Verify both agent IDs are present (order not guaranteed)
@@ -90,12 +105,17 @@ class DashboardTest extends TestCase
      */
     public function test_dashboard_with_no_tenant_returns_empty_agents(): void
     {
+        // Authenticate as a user
+        $user = \App\Models\User::factory()->create();
+        $this->actingAs($user);
+
         $response = $this->get('/dashboard');
 
         $response->assertStatus(200);
-        $response->assertInertia(fn (Assert $page) => $page->component('Dashboard/Overview')
-            ->where('agents', [])
-            ->where('tenant', null)
+        $response->assertInertia(
+            fn (Assert $page) => $page->component('Dashboard/Overview')
+                ->where('agents', [])
+                ->where('tenant', null)
         );
     }
 
@@ -107,13 +127,18 @@ class DashboardTest extends TestCase
         $tenant = Tenant::factory()->create();
         $agentId = 'agent-123';
 
+        // Authenticate as a user
+        $user = \App\Models\User::factory()->create();
+        $this->actingAs($user);
+
         $response = $this->get("/dashboard/tenants/{$tenant->id}?agent_id={$agentId}");
 
         $response->assertStatus(200);
-        $response->assertInertia(fn (Assert $page) => $page->component('Dashboard/TenantDetail')
-            ->has('tenant')
-            ->where('tenant.id', $tenant->id)
-            ->where('agent_id', $agentId)
+        $response->assertInertia(
+            fn (Assert $page) => $page->component('Dashboard/TenantDetail')
+                ->has('tenant')
+                ->where('tenant.id', $tenant->id)
+                ->where('agent_id', $agentId)
         );
     }
 }

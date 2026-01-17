@@ -11,6 +11,8 @@ Route::get('/', function () {
 
 Route::get('/health', [HealthController::class, 'index']);
 
-// Dashboard routes
-Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
-Route::get('/dashboard/tenants/{tenant}', [DashboardController::class, 'show'])->name('dashboard.tenant.show');
+// Dashboard routes (auth required)
+Route::middleware(['auth'])->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
+    Route::get('/dashboard/tenants/{tenant}', [DashboardController::class, 'show'])->name('dashboard.tenant.show');
+});
