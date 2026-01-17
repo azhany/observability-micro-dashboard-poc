@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\MetricIngestionController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->middleware('auth.tenant')->group(function () {
@@ -12,4 +13,7 @@ Route::prefix('v1')->middleware('auth.tenant')->group(function () {
             'tenant_name' => $tenant->name,
         ]);
     });
+
+    // Metric Ingestion API
+    Route::post('/metrics', [MetricIngestionController::class, 'store']);
 });
