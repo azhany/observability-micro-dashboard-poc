@@ -6,6 +6,7 @@ class StreamService {
     private eventSource: EventSource | null = null;
     private listeners: Map<string, StreamCallback[]> = new Map();
     private currentTenantId: string | null = null;
+    private connected = false;
 
     private constructor() { }
 
@@ -14,6 +15,10 @@ class StreamService {
             StreamService.instance = new StreamService();
         }
         return StreamService.instance;
+    }
+
+    public isConnected(): boolean {
+        return this.connected;
     }
 
     public connect(tenantId: string): void {
@@ -33,17 +38,15 @@ class StreamService {
 
         this.eventSource.onopen = () => {
             console.log('StreamService: Connected');
+            this.connected = true;
             this.dispatch('connected', { tenantId });
         };
 
         this.eventSource.onmessage = (event) => {
             try {
                 const payload = JSON.parse(event.data);
-                // Dispatch generic message
+                this.connected = true;
                 this.dispatch('message', payload);
-
-                // If payload has a specific event type or metric name, we could dispatch that too
-                // For now, we assume the consumer filters the messages
             } catch (error) {
                 console.error('StreamService: Error parsing message', error);
             }
@@ -51,6 +54,7 @@ class StreamService {
 
         this.eventSource.onerror = (error) => {
             console.error('StreamService: Connection error', error);
+            this.connected = false;
             this.dispatch('error', error);
             // EventSource automatically attempts to reconnect
         };
@@ -61,6 +65,7 @@ class StreamService {
             this.eventSource.close();
             this.eventSource = null;
             this.currentTenantId = null;
+            this.connected = false;
             console.log('StreamService: Disconnected');
         }
     }

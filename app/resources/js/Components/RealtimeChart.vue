@@ -13,9 +13,13 @@ const props = defineProps<{
 
 const chartCanvas = ref<HTMLCanvasElement | null>(null);
 let chartInstance: Chart | null = null;
-const isLive = ref(true);
+const isLive = ref(false);
+const hasError = ref(false);
 
 const MAX_POINTS = props.maxPoints || 50;
+const STATUS_TIMEOUT = 5000; // 5 seconds without data = not live
+let lastDataTime = 0;
+let statusCheckInterval: number | null = null;
 
 const initChart = () => {
     if (!chartCanvas.value) return;
@@ -57,7 +61,10 @@ const initChart = () => {
                         display: false
                     },
                     ticks: {
-                        color: 'gray'
+                        color: 'gray',
+                        maxRotation: 0,
+                        autoSkip: true,
+                        maxTicksLimit: 10
                     }
                 },
                 y: {
@@ -98,9 +105,20 @@ const handleData = (data: any) => {
         // Optimized update
         chartInstance.update('none');
         
-        // Ensure live indicator is active
+        lastDataTime = Date.now();
         isLive.value = true;
+        hasError.value = false;
     }
+};
+
+const handleConnection = () => {
+    isLive.value = true;
+    hasError.value = false;
+};
+
+const handleError = () => {
+    isLive.value = false;
+    hasError.value = true;
 };
 
 onMounted(() => {
@@ -108,29 +126,49 @@ onMounted(() => {
     
     // Connect to stream service
     StreamService.connect(props.tenantId);
+    isLive.value = StreamService.isConnected();
     
-    // Listen to messages
+    // Listen to events
     StreamService.on('message', handleData);
+    StreamService.on('connected', handleConnection);
+    StreamService.on('error', handleError);
+
+    // Watchdog for live status
+    statusCheckInterval = window.setInterval(() => {
+        if (isLive.value && Date.now() - lastDataTime > STATUS_TIMEOUT) {
+            // No data for a while, but connection might still be open
+            // We'll keep isLive based on service status but maybe dim the pulse
+        }
+    }, 2000);
 });
 
 onUnmounted(() => {
     StreamService.off('message', handleData);
+    StreamService.off('connected', handleConnection);
+    StreamService.off('error', handleError);
+    
+    if (statusCheckInterval) clearInterval(statusCheckInterval);
+    
     if (chartInstance) {
         chartInstance.destroy();
     }
-});
-
-// Reconnect if tenant changes
-watch(() => props.tenantId, (newId) => {
-    StreamService.connect(newId);
 });
 </script>
 
 <template>
     <div class="relative w-full h-64 bg-white dark:bg-gray-800 rounded-lg shadow p-4 border border-gray-200 dark:border-gray-700">
         <div class="absolute top-4 right-4 flex items-center gap-2 z-10">
-            <span class="text-xs text-gray-500 dark:text-gray-400 font-medium">LIVE</span>
-            <div class="w-2 h-2 rounded-full bg-red-500 transition-opacity duration-1000" :class="{ 'animate-pulse': isLive }"></div>
+            <span class="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                {{ hasError ? 'OFFLINE' : 'LIVE' }}
+            </span>
+            <div 
+                class="w-2 h-2 rounded-full transition-all duration-500" 
+                :class="{ 
+                    'bg-red-500 animate-pulse': isLive && !hasError,
+                    'bg-gray-400': !isLive && !hasError,
+                    'bg-red-800': hasError
+                }"
+            ></div>
         </div>
         <div class="h-full w-full">
             <canvas ref="chartCanvas"></canvas>
