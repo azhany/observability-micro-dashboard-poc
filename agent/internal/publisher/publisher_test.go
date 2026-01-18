@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"observability-agent/internal/models"
 )
 
@@ -111,12 +112,50 @@ func TestIsConnected(t *testing.T) {
 	}
 }
 
-func TestClose(t *testing.T) {
-	// Test close with nil client (should not panic)
+type mockClient struct {
+	mqtt.Client
+	publishedTopic string
+	publishedPayload []byte
+}
+
+func (m *mockClient) Publish(topic string, qos byte, retained bool, payload interface{}) mqtt.Token {
+	m.publishedTopic = topic
+	m.publishedPayload = payload.([]byte)
+	return &mockToken{}
+}
+
+type mockToken struct {
+	mqtt.Token
+}
+
+func (m *mockToken) Wait() bool { return true }
+func (m *mockToken) Error() error { return nil }
+
+func TestPublish_Logic(t *testing.T) {
+	mock := &mockClient{}
 	pub := &Publisher{
-		client: nil,
+		client: mock,
 	}
 
-	// Should not panic
-	pub.Close()
+	metric := &models.Metric{
+		TenantID:   "t1",
+		AgentID:    "a1",
+		MetricName: "cpu",
+		Value:      10.5,
+		Timestamp:  time.Now(),
+	}
+
+	err := pub.Publish(metric)
+	if err != nil {
+		t.Fatalf("Publish failed: %v", err)
+	}
+
+	expectedTopic := "metrics/t1/a1/cpu"
+	if mock.publishedTopic != expectedTopic {
+		t.Errorf("Expected topic %s, got %s", expectedTopic, mock.publishedTopic)
+	}
+
+	if len(mock.publishedPayload) == 0 {
+		t.Error("Payload should not be empty")
+	}
 }
