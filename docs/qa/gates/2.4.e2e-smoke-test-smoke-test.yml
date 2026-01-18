@@ -1,0 +1,39 @@
+schema: 1
+story: '2.4'
+story_title: 'E2E Smoke Test (Ingest -> Chart)'
+gate: PASS
+status_reason: 'All critical requirements met including containerized execution and authentication. Risk descriptions verified.'
+reviewer: 'Quinn (Test Architect)'
+updated: '2026-01-18T17:40:00+08:00'
+
+top_issues: []
+waiver: { active: false }
+
+quality_score: 100
+
+evidence:
+  tests_reviewed: 1
+  risks_identified: 2
+  trace:
+    ac_covered: [1, 2, 3]
+    ac_gaps: []
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: 'Auth flow verified in E2E tests'
+  performance:
+    status: PASS
+    notes: '500ms target validated by test assertion (PERF-001 monitored)'
+  reliability:
+    status: PASS
+    notes: 'Async/SSE handling implemented robustly'
+  maintainability:
+    status: PASS
+    notes: 'Code follows Playwright best practices'
+
+recommendations:
+  immediate: []
+  future:
+    - action: 'Benchmark latency in CI'
+      refs: ['app/tests/e2e/smoke-test.spec.ts']
