@@ -50,6 +50,20 @@ services:
     ports:
       - "6379:6379"
 
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    container_name: observability-mosquitto
+    restart: unless-stopped
+    volumes:
+      - ./docker/mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - ./docker/mosquitto/data:/mosquitto/data
+      - ./docker/mosquitto/log:/mosquitto/log
+    networks:
+      - observability-network
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+
   nginx:
     image: nginx:alpine
     container_name: observability-nginx
