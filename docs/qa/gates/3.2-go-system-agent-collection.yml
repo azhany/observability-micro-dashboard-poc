@@ -1,39 +1,33 @@
 schema: 1
 story: "3.2"
 story_title: "Go System Agent - Metric Collection"
-gate: CONCERNS
-status_reason: "Implementation meets all ACs, but CPU collection introduces a 1-second block per cycle, leading to potential timing drift."
+gate: PASS
+status_reason: "Critical CPU blocking issue resolved; warm-up cycle implemented; implementation meets all ACs and passing all tests."
 reviewer: "Quinn (Test Architect)"
-updated: "2026-01-18T14:30:00Z"
+updated: "2026-01-18T15:00:00Z"
 
 waiver: { active: false }
 
 top_issues:
-  - id: "PERF-001"
-    severity: medium
-    finding: "CPU collection (cpu.Percent) blocks for 1 second, causing loop drift."
-    suggested_action: "Implement non-blocking CPU collection or adjust ticker to account for collection time."
   - id: "ARCH-001"
     severity: low
     finding: "Project uses internal/ instead of pkg/ as recommended in docs/architecture/9-unified-project-structure.md."
-    suggested_action: "Move shared logic to pkg/ if reuse is anticipated."
+    suggested_action: "Move shared logic to pkg/ if reuse is anticipated in future stories."
 
 risk_summary:
-  totals: { critical: 0, high: 1, medium: 3, low: 2 }
+  totals: { critical: 0, high: 0, medium: 2, low: 3 }
   highest:
-    id: DATA-001
-    score: 6
-    title: "CPU Metric Initial 0 Value"
+    id: TECH-001
+    score: 4
+    title: "OS Metric Inconsistency"
   recommendations:
-    must_fix:
-      - "Implement warm-up cycle for CPU metrics"
-      - "Validate JSON schema against backend requirements"
+    must_fix: []
     monitor:
       - "Monitor agent resource overhead"
 
-quality_score: 90
+quality_score: 95
 evidence:
-  tests_reviewed: 3
+  tests_reviewed: 5
   risks_identified: 6
   trace:
     ac_covered: [1, 2, 3, 4]
@@ -41,14 +35,12 @@ evidence:
 
 nfr_validation:
   security: { status: PASS, notes: "No secrets exposed; minimal privileges." }
-  performance: { status: CONCERNS, notes: "Blocking CPU collection affects high-frequency accuracy." }
-  reliability: { status: PASS, notes: "Standard Go error handling used." }
-  maintainability: { status: PASS, notes: "Modular design with clear separation of concerns." }
+  performance: { status: PASS, notes: "Non-blocking CPU collection verified." }
+  reliability: { status: PASS, notes: "Warm-up cycle prevents initial bad data." }
+  maintainability: { status: PASS, notes: "Code structure is clean and modular." }
 
 recommendations:
-  immediate:
-    - action: "Fix CPU collection blocking behavior"
-      refs: ["agent/internal/collector/cpu.go"]
+  immediate: []
   future:
     - action: "Align project structure with pkg/ convention"
       refs: ["agent/internal/"]
