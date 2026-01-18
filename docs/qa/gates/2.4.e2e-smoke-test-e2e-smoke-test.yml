@@ -1,0 +1,45 @@
+schema: 1
+story: '2.4.e2e-smoke-test'
+story_title: 'E2E Smoke Test (Ingest -> Chart)'
+gate: FAIL
+status_reason: 'Tests fail to run in container due to missing OS dependencies, and test logic fails to handle authentication for SSE.'
+reviewer: 'Quinn (Test Architect)'
+updated: '2026-01-18T12:00:00Z'
+
+top_issues:
+  - severity: high
+    description: 'Docker container missing Playwright system dependencies (libglib, etc.).'
+    suggested_owner: dev
+  - severity: high
+    description: 'Smoke test bypasses authentication, causing SSE connection failure (401).'
+    suggested_owner: dev
+
+waiver: { active: false }
+
+evidence:
+  tests_reviewed: 3
+  risks_identified: 2
+  trace:
+    ac_covered: [1]
+    ac_gaps: [2, 3]
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: 'API endpoints are correctly protected (causing the test failure).'
+  performance:
+    status: CONCERNS
+    notes: 'Cannot verify 500ms target as tests do not run.'
+  reliability:
+    status: FAIL
+    notes: 'Tests fail consistently due to environment and logic errors.'
+  maintainability:
+    status: PASS
+    notes: 'Test code structure is clean.'
+
+recommendations:
+  immediate:
+    - action: 'Update Dockerfile to include Playwright dependencies (e.g., npx playwright install-deps in build or use a base image with browsers).'
+    - action: 'Update smoke-test.spec.ts to perform a UI login before testing the chart to ensure session cookies are set.'
+  future:
+    - action: 'Consider using a dedicated testing container to keep the production image slim.'
