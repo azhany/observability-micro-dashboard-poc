@@ -1,0 +1,15 @@
+# Mosquitto Password File
+#
+# This is an example file. To create the actual password file:
+#
+# 1. Create a user with password:
+#    docker exec observability-mosquitto mosquitto_passwd -c /mosquitto/config/passwd bridge_user
+#
+# 2. Add additional users:
+#    docker exec observability-mosquitto mosquitto_passwd -b /mosquitto/config/passwd edge_device password123
+#
+# 3. Or use the setup script:
+#    ./docker/mosquitto/setup-auth.sh
+#
+# Format (DO NOT EDIT MANUALLY - use mosquitto_passwd):
+# username:hashed_password

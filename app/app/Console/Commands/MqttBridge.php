@@ -16,7 +16,11 @@ class MqttBridge extends Command
      *
      * @var string
      */
-    protected $signature = 'mqtt:bridge {--host=mosquitto} {--port=1883}';
+    protected $signature = 'mqtt:bridge
+                            {--host=mosquitto : MQTT broker hostname}
+                            {--port=1883 : MQTT broker port}
+                            {--username=bridge_user : MQTT username for authentication}
+                            {--password=bridge_pass : MQTT password for authentication}';
 
     /**
      * The console command description.
@@ -26,38 +30,61 @@ class MqttBridge extends Command
     protected $description = 'Subscribe to MQTT metrics and forward to ingestion pipeline';
 
     /**
+     * Flag to indicate if shutdown has been requested.
+     */
+    protected bool $shouldShutdown = false;
+
+    /**
+     * The MQTT client instance.
+     */
+    protected ?MqttClient $mqtt = null;
+
+    /**
      * Execute the console command.
      */
     public function handle(): int
     {
         $host = $this->option('host');
         $port = (int) $this->option('port');
+        $username = $this->option('username');
+        $password = $this->option('password');
 
         $this->info("Starting MQTT Bridge: {$host}:{$port}");
+        $this->info("Authenticating as: {$username}");
+
+        // Register signal handlers for graceful shutdown
+        $this->registerSignalHandlers();
 
         try {
-            $mqtt = new MqttClient($host, $port, uniqid('observability_bridge_'));
+            $this->mqtt = new MqttClient($host, $port, uniqid('observability_bridge_'));
 
             $connectionSettings = (new \PhpMqtt\Client\ConnectionSettings)
                 ->setKeepAliveInterval(60)
                 ->setLastWillTopic('bridge/status')
                 ->setLastWillMessage('offline')
-                ->setLastWillQualityOfService(1);
+                ->setLastWillQualityOfService(1)
+                ->setUsername($username)
+                ->setPassword($password);
 
-            $mqtt->connect($connectionSettings, true);
-            $this->info('Connected to MQTT broker');
+            $this->mqtt->connect($connectionSettings, true);
+            $this->info('Connected to MQTT broker with authentication');
 
             // Subscribe to metrics wildcard topic
-            $mqtt->subscribe('metrics/#', function (string $topic, string $message) {
+            $this->mqtt->subscribe('metrics/#', function (string $topic, string $message) {
                 $this->processMessage($topic, $message);
             }, 1);
 
             $this->info('Subscribed to metrics/# - Listening for messages...');
+            $this->info('Press Ctrl+C to gracefully shutdown');
 
             // Keep the connection alive and process incoming messages
-            $mqtt->loop(true);
+            while (! $this->shouldShutdown) {
+                $this->mqtt->loop(false, true, 1);
+            }
 
-            $mqtt->disconnect();
+            $this->info('Shutting down gracefully...');
+            $this->mqtt->disconnect();
+            $this->info('Disconnected from MQTT broker');
         } catch (MqttClientException $e) {
             $this->error('MQTT Error: '.$e->getMessage());
             Log::error('MQTT Bridge error', ['error' => $e->getMessage()]);
@@ -66,6 +93,32 @@ class MqttBridge extends Command
         }
 
         return Command::SUCCESS;
+    }
+
+    /**
+     * Register signal handlers for graceful shutdown.
+     */
+    protected function registerSignalHandlers(): void
+    {
+        if (! function_exists('pcntl_signal')) {
+            $this->warn('PCNTL extension not available - graceful shutdown disabled');
+
+            return;
+        }
+
+        pcntl_signal(SIGTERM, function () {
+            $this->info('Received SIGTERM signal');
+            $this->shouldShutdown = true;
+        });
+
+        pcntl_signal(SIGINT, function () {
+            $this->info('Received SIGINT signal');
+            $this->shouldShutdown = true;
+        });
+
+        pcntl_async_signals(true);
+
+        Log::debug('Signal handlers registered for graceful shutdown');
     }
 
     /**

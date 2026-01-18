@@ -1,0 +1,22 @@
+# Mosquitto Access Control List (ACL)
+#
+# Format:
+#   user <username>
+#   topic [read|write|readwrite] <topic>
+#
+# Special users:
+#   - anonymous: Users without credentials (if allow_anonymous true)
+#   - pattern %u: Replaced with username
+#   - pattern %c: Replaced with client ID
+
+# Bridge user - full access to metrics topic
+user bridge_user
+topic readwrite metrics/#
+topic readwrite bridge/#
+
+# Edge device pattern - can only publish to their own tenant
+# Usage: Create users like "device_<tenant_id>" and they can only publish to metrics/<tenant_id>/#
+user device_%u
+topic write metrics/%u/#
+
+# Default: Deny all for users not explicitly listed above
