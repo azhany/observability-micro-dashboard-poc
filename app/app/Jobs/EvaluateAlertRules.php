@@ -21,14 +21,15 @@ class EvaluateAlertRules implements ShouldQueue
      */
     public function handle(): void
     {
-        $rules = AlertRule::all();
+        $count = 0;
 
-        foreach ($rules as $rule) {
+        foreach (AlertRule::cursor() as $rule) {
             $this->evaluateRule($rule);
+            $count++;
         }
 
         Log::info('Alert rule evaluation completed', [
-            'rules_evaluated' => $rules->count(),
+            'rules_evaluated' => $count,
         ]);
     }
 

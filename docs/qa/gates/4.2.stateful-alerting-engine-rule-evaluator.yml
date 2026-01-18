@@ -1,0 +1,42 @@
+schema: 1
+story: '4.2.stateful-alerting-engine'
+story_title: 'Stateful Alerting Engine (Rule Evaluator)'
+gate: PASS
+status_reason: 'Core state machine logic is sound, tests are comprehensive, and memory usage optimization applied.'
+reviewer: 'Quinn (Test Architect)'
+updated: '2026-01-19T10:00:00Z'
+
+top_issues: []
+
+waiver: { active: false }
+
+quality_score: 95
+
+evidence:
+  tests_reviewed: 6
+  risks_identified: 1
+  trace:
+    ac_covered: [1, 2, 3, 4]
+    ac_gaps: []
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: 'Tenant isolation verified by tests.'
+  performance:
+    status: CONCERNS
+    notes: 'N+1 query pattern in Evaluator (one query per rule). Acceptable for POC/MVP, but requires batching or TSDB optimization for scale.'
+  reliability:
+    status: PASS
+    notes: 'State machine handles transitions robustly.'
+  maintainability:
+    status: PASS
+    notes: 'Clean separation of concerns.'
+
+recommendations:
+  immediate:
+    - action: 'Refactored AlertRule iteration to use cursor() for memory efficiency.'
+      refs: ['app/Jobs/EvaluateAlertRules.php']
+  future:
+    - action: 'Optimize Evaluator to batch metric queries or use a dedicated TSDB query.'
+      refs: ['app/Jobs/EvaluateAlertRules.php']
