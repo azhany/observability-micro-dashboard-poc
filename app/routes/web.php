@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HealthController;
+use App\Http\Controllers\LoginController;
 use App\Http\Controllers\StreamController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -11,6 +12,11 @@ Route::get('/', function () {
 });
 
 Route::get('/health', [HealthController::class, 'index']);
+
+// Authentication routes
+Route::get('/login', [LoginController::class, 'create'])->name('login');
+Route::post('/login', [LoginController::class, 'store']);
+Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
 
 // E2E Test route for ChartTest page (no auth for testing)
 Route::get('/test/chart', function () {

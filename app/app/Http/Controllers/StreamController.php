@@ -18,7 +18,7 @@ class StreamController extends Controller
 
         // Authorization check: Ensure user has access to this tenant
         $user = auth()->user();
-        if (!$user->tenants()->where('tenants.id', $tenant->id)->exists()) {
+        if (! $user->tenants()->where('tenants.id', $tenant->id)->exists()) {
             abort(403, 'Unauthorized access to tenant stream');
         }
 

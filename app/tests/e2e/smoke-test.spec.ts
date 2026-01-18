@@ -22,8 +22,21 @@ const BASE_API_URL = 'http://nginx/api/v1';
 test.describe('E2E Smoke Test: Ingest -> Chart', () => {
 
   test.beforeEach(async ({ page }) => {
-    // Setup: Navigate to the chart test page
-    await page.goto('/test/chart');
+    // Setup: Login to establish authenticated session
+    await page.goto('/login');
+
+    // Fill in login form with test credentials
+    await page.fill('input[name="email"]', 'test@example.com');
+    await page.fill('input[name="password"]', 'password');
+
+    // Submit login form
+    await page.click('button[type="submit"]');
+
+    // Wait for redirect to dashboard after successful login
+    await page.waitForURL('/dashboard', { timeout: 10000 });
+
+    // Navigate to the tenant dashboard (real user path)
+    await page.goto(`/dashboard/tenants/${TEST_TENANT_ID}`);
 
     // Wait for the page to load and SSE connection to establish
     await page.waitForLoadState('networkidle');

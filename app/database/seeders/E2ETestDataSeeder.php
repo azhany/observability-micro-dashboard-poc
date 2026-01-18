@@ -46,10 +46,25 @@ class E2ETestDataSeeder extends Seeder
             ]
         );
 
+        // Create a test user for E2E authentication
+        $user = \App\Models\User::firstOrCreate(
+            ['email' => 'test@example.com'],
+            [
+                'name' => 'E2E Test User',
+                'password' => bcrypt('password'), // Simple password for testing
+            ]
+        );
+
+        // Associate user with the test tenant
+        if (! $user->tenants()->where('tenant_id', $tenant->id)->exists()) {
+            $user->tenants()->attach($tenant->id);
+        }
+
         $this->command->info('✅ E2E test data created successfully!');
         $this->command->info("   Tenant ID: {$tenant->id}");
         $this->command->info("   Tenant Name: {$tenant->name}");
         $this->command->info('   Test Token: '.$plainTextToken);
+        $this->command->info('   Test User: test@example.com / password');
         $this->command->info('');
         $this->command->info('You can now run E2E tests with: npm run test:e2e');
     }

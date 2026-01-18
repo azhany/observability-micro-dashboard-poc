@@ -101,6 +101,16 @@ npm run test:e2e:headed
 - **Test Data**: Created by `E2ETestDataSeeder`
   - Tenant ID: `tenant-demo`
   - Test Token: `test-token-12345678901234567890123456789012`
+  - Test User: `test@example.com` / `password`
+
+### Authentication Flow
+
+The E2E tests now use the real authentication flow:
+1. Login to the application with test credentials
+2. Navigate to the tenant dashboard
+3. Test the full Ingest → SSE → Chart flow
+
+This ensures the tests validate the actual user experience and properly test the authenticated SSE connection.
 
 ## Contributing
 
