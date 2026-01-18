@@ -12,6 +12,11 @@ Route::get('/', function () {
 
 Route::get('/health', [HealthController::class, 'index']);
 
+// E2E Test route for ChartTest page (no auth for testing)
+Route::get('/test/chart', function () {
+    return Inertia::render('ChartTest');
+})->name('test.chart');
+
 // Dashboard routes (auth required)
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index');

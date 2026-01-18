@@ -49,6 +49,59 @@ We would like to extend our thanks to the following sponsors for funding Laravel
 - **[byte5](https://byte5.de)**
 - **[OP.GG](https://op.gg)**
 
+## Running E2E Tests
+
+This project includes Playwright E2E tests to validate the end-to-end flow from metric ingestion to chart visualization.
+
+### Prerequisites
+
+1. Ensure the application is running via Docker Compose
+2. Database migrations have been run
+3. E2E test data has been seeded
+
+### Running Tests in Docker (Recommended)
+
+```bash
+# 1. Seed the E2E test data
+docker exec -it observability-app php artisan db:seed --class=E2ETestDataSeeder
+
+# 2. Run the E2E tests
+docker exec -it observability-app npm run test:e2e
+```
+
+### Running Tests Locally
+
+```bash
+# 1. Seed the E2E test data
+cd app
+php artisan db:seed --class=E2ETestDataSeeder
+
+# 2. Run the E2E tests
+npm run test:e2e
+
+# Optional: Run with UI
+npm run test:e2e:ui
+
+# Optional: Run in headed mode (see browser)
+npm run test:e2e:headed
+```
+
+### Test Structure
+
+- **Test Location**: `app/tests/e2e/smoke-test.spec.ts`
+- **Test Scenarios**:
+  - Metric ingestion to chart display (< 500ms)
+  - Multiple metrics in sequence
+  - SSE connection stability
+
+### Configuration
+
+- **Playwright Config**: `app/playwright.config.ts`
+- **Base URL**: `http://nginx` (for containerized tests)
+- **Test Data**: Created by `E2ETestDataSeeder`
+  - Tenant ID: `tenant-demo`
+  - Test Token: `test-token-12345678901234567890123456789012`
+
 ## Contributing
 
 Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
