@@ -206,6 +206,43 @@ class DashboardTest extends TestCase
     }
 
     /**
+     * Test that dashboard only shows agents for the current tenant.
+     */
+    public function test_dashboard_only_shows_agents_for_current_tenant(): void
+    {
+        $tenant1 = Tenant::factory()->create();
+        $tenant2 = Tenant::factory()->create();
+
+        // Create metrics for tenant 1
+        Metric::factory()->create([
+            'tenant_id' => $tenant1->id,
+            'agent_id' => 'tenant-1-agent',
+        ]);
+
+        // Create metrics for tenant 2
+        Metric::factory()->create([
+            'tenant_id' => $tenant2->id,
+            'agent_id' => 'tenant-2-agent',
+        ]);
+
+        // Authenticate as a user (associated with tenant 1 in this PoC context)
+        $user = \App\Models\User::factory()->create();
+        $this->actingAs($user);
+
+        // The current controller logic picks Tenant::first(), so we ensure tenant1 is first
+        // by creating it first or manipulating the query if needed, but for PoC it's fine.
+        
+        $response = $this->get('/dashboard');
+
+        $response->assertStatus(200);
+        $response->assertInertia(
+            fn (Assert $page) => $page->component('Dashboard/Overview')
+                ->has('agents', 1)
+                ->where('agents.0.id', 'tenant-1-agent')
+        );
+    }
+
+    /**
      * Test dashboard with no tenant returns empty agents list.
      */
     public function test_dashboard_with_no_tenant_returns_empty_agents(): void
@@ -245,5 +282,22 @@ class DashboardTest extends TestCase
                 ->where('tenant.id', $tenant->id)
                 ->where('agent_id', $agentId)
         );
+    }
+
+    /**
+     * Test that a user cannot access a different tenant's detail page.
+     */
+    public function test_tenant_detail_prevents_access_to_other_tenant(): void
+    {
+        $tenant1 = Tenant::factory()->create(); // This will be the "first" tenant (session tenant in PoC)
+        $tenant2 = Tenant::factory()->create();
+
+        $user = \App\Models\User::factory()->create();
+        $this->actingAs($user);
+
+        // Attempt to access tenant 2 while "logged in" as tenant 1
+        $response = $this->get("/dashboard/tenants/{$tenant2->id}");
+
+        $response->assertStatus(403);
     }
 }

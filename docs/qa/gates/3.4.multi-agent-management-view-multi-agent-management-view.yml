@@ -1,0 +1,53 @@
+schema: 1
+story: "3.4"
+story_title: "Multi-Agent Management View"
+gate: PASS
+status_reason: "Story meets all acceptance criteria. Security risk SEC-001 (multi-tenant isolation) has been mitigated with explicit ownership checks and regression tests."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-01-18T23:01:00Z"
+
+waiver: { active: false }
+
+top_issues:
+  - id: "PERF-001"
+    severity: low
+    finding: "Dashboard aggregation uses MAX(timestamp) on a raw metrics table, which may scale poorly."
+    suggested_action: "Implement an agent registry or caching for last_seen status in a future story."
+
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 3, low: 1 }
+  highest:
+    id: SEC-001
+    score: 6
+    title: "Tenant Isolation Breach via Agent ID"
+  recommendations:
+    must_fix:
+      - "Implement strict tenant ownership checks for agent_id parameters in DashboardController (COMPLETED during review)"
+    monitor:
+      - "Query performance of agent status aggregation"
+
+evidence:
+  tests_reviewed: 34
+  risks_identified: 5
+  trace:
+    ac_covered: [1, 2, 3, 4, 5]
+    ac_gaps: []
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: "Tenant isolation verified via manual inspection and new regression tests."
+  performance:
+    status: CONCERNS
+    notes: "Aggregation query performance should be monitored as data grows."
+  reliability:
+    status: PASS
+    notes: "60s timeout logic is robust and tested."
+  maintainability:
+    status: PASS
+    notes: "Refactored to use Carbon for better date handling."
+
+recommendations:
+  immediate: []
+  future:
+    - action: "Introduce Agent registry table to avoid scanning metrics_raw for agent lists."

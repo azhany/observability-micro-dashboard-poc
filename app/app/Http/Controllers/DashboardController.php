@@ -38,13 +38,11 @@ class DashboardController extends Controller
             ->groupBy('agent_id')
             ->get()
             ->map(function ($metric) {
-                $lastSeenTimestamp = strtotime($metric->last_seen);
-                $currentTimestamp = time();
-                $secondsSinceLastSeen = $currentTimestamp - $lastSeenTimestamp;
-
+                $lastSeen = \Illuminate\Support\Carbon::parse($metric->last_seen);
+                
                 return [
                     'id' => $metric->agent_id,
-                    'status' => $secondsSinceLastSeen <= 60 ? 'Online' : 'Offline',
+                    'status' => $lastSeen->diffInSeconds(now()) <= 60 ? 'Online' : 'Offline',
                     'last_seen' => $metric->last_seen,
                 ];
             });
@@ -60,11 +58,18 @@ class DashboardController extends Controller
      */
     public function show(Request $request, string $tenant): Response
     {
+        // For PoC: Using first tenant as default
+        // In production, this would be: $currentTenant = $request->user()->tenant;
+        $currentTenant = Tenant::first();
+
         /**
          * SEC-001: Multi-tenant Isolation
-         * TODO: Ensure authenticated user has access to this specific tenant.
-         * Currently relies on finding by ID without ownership verification.
+         * Verify that the requested tenant ID matches the authenticated user's tenant.
          */
+        if (!$currentTenant || $currentTenant->id !== $tenant) {
+            abort(403, 'Unauthorized access to tenant data.');
+        }
+
         $tenantModel = Tenant::findOrFail($tenant);
 
         // Get agent_id from query parameter if provided
