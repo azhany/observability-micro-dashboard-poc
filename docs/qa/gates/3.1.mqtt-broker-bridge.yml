@@ -1,0 +1,48 @@
+schema: 1
+story: "3.1"
+story_title: "MQTT Broker & Bridge Infrastructure"
+gate: "CONCERNS"
+status_reason: "Functionality is 100% complete and tested, but security (anonymous access) and operational (process management) concerns remain for production readiness."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-01-18T14:30:00Z"
+
+waiver: { active: false }
+
+top_issues:
+  - id: "SEC-001"
+    severity: high
+    finding: "Anonymous access enabled in Mosquitto configuration."
+    suggested_action: "Implement authentication and ACLs in mosquitto.conf."
+  - id: "OPS-001"
+    severity: medium
+    finding: "No production process manager (Supervisor) configured for the bridge command."
+    suggested_action: "Configure Supervisor to manage the 'php artisan mqtt:bridge' lifecycle."
+
+risk_summary:
+  totals: { critical: 1, high: 1, medium: 2, low: 2 }
+  highest:
+    id: "SEC-001"
+    score: 9
+    title: "Anonymous access in Mosquitto"
+  recommendations:
+    must_fix:
+      - "Disable anonymous access and implement authentication in Mosquitto"
+      - "Implement a production process manager (Supervisor) for the Artisan Bridge"
+    monitor:
+      - "Memory usage of the long-running PHP bridge process"
+      - "Connection stability between the bridge and the broker"
+
+evidence:
+  tests_reviewed: 7
+  risks_identified: 6
+  trace:
+    ac_covered: [1, 2, 3, 4]
+    ac_gaps: []
+
+nfr_validation:
+  security: { status: FAIL, notes: "Anonymous access is a critical risk." }
+  performance: { status: PASS, notes: "Initial tests show stable memory usage." }
+  reliability: { status: CONCERNS, notes: "Needs Supervisor for process resilience." }
+  maintainability: { status: PASS, notes: "Code is clean and well-documented." }
+
+quality_score: 70
