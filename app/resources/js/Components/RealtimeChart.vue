@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import Chart, { type ChartItem } from 'chart.js/auto';
 import StreamService from '../Services/StreamService';
 
@@ -159,7 +159,7 @@ onUnmounted(() => {
     <div class="relative w-full h-64 bg-white dark:bg-gray-800 rounded-lg shadow p-4 border border-gray-200 dark:border-gray-700">
         <div class="absolute top-4 right-4 flex items-center gap-2 z-10">
             <span class="text-xs text-gray-500 dark:text-gray-400 font-medium">
-                {{ hasError ? 'OFFLINE' : 'LIVE' }}
+                {{ hasError ? 'OFFLINE' : (isLive ? 'LIVE' : 'CONNECTING') }}
             </span>
             <div 
                 class="w-2 h-2 rounded-full transition-all duration-500" 
