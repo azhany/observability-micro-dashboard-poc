@@ -1,0 +1,40 @@
+schema: 1
+story: '4.1'
+story_title: 'Automated Downsampling (1m & 5m Rollups)'
+gate: PASS
+status_reason: 'All acceptance criteria met, comprehensive tests passing, and code adheres to standards.'
+reviewer: 'Quinn (Test Architect)'
+updated: '2026-01-19T10:00:00Z'
+
+top_issues: []
+
+waiver: { active: false }
+
+evidence:
+  tests_reviewed: 24
+  risks_identified: 1
+  trace:
+    ac_covered: [1, 2, 3, 4]
+    ac_gaps: []
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: 'Tenant isolation and input validation verified.'
+  performance:
+    status: PASS
+    notes: 'API uses pagination/limits. Rollups reduce read load.'
+  reliability:
+    status: PASS
+    notes: 'Aggregation is idempotent.'
+  maintainability:
+    status: PASS
+    notes: 'Code is clean and modular.'
+
+recommendations:
+  immediate: []
+  future:
+    - action: 'Add delay/buffer to aggregation window to handle ingestion latency'
+      refs: ['app/Console/Commands/DownsampleMetrics.php']
+    - action: 'Implement chunked deletes for retention cleanup'
+      refs: ['app/Console/Commands/CleanupOldMetrics.php']
