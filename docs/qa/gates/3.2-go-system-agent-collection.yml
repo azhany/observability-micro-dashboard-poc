@@ -1,0 +1,54 @@
+schema: 1
+story: "3.2"
+story_title: "Go System Agent - Metric Collection"
+gate: CONCERNS
+status_reason: "Implementation meets all ACs, but CPU collection introduces a 1-second block per cycle, leading to potential timing drift."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-01-18T14:30:00Z"
+
+waiver: { active: false }
+
+top_issues:
+  - id: "PERF-001"
+    severity: medium
+    finding: "CPU collection (cpu.Percent) blocks for 1 second, causing loop drift."
+    suggested_action: "Implement non-blocking CPU collection or adjust ticker to account for collection time."
+  - id: "ARCH-001"
+    severity: low
+    finding: "Project uses internal/ instead of pkg/ as recommended in docs/architecture/9-unified-project-structure.md."
+    suggested_action: "Move shared logic to pkg/ if reuse is anticipated."
+
+risk_summary:
+  totals: { critical: 0, high: 1, medium: 3, low: 2 }
+  highest:
+    id: DATA-001
+    score: 6
+    title: "CPU Metric Initial 0 Value"
+  recommendations:
+    must_fix:
+      - "Implement warm-up cycle for CPU metrics"
+      - "Validate JSON schema against backend requirements"
+    monitor:
+      - "Monitor agent resource overhead"
+
+quality_score: 90
+evidence:
+  tests_reviewed: 3
+  risks_identified: 6
+  trace:
+    ac_covered: [1, 2, 3, 4]
+    ac_gaps: []
+
+nfr_validation:
+  security: { status: PASS, notes: "No secrets exposed; minimal privileges." }
+  performance: { status: CONCERNS, notes: "Blocking CPU collection affects high-frequency accuracy." }
+  reliability: { status: PASS, notes: "Standard Go error handling used." }
+  maintainability: { status: PASS, notes: "Modular design with clear separation of concerns." }
+
+recommendations:
+  immediate:
+    - action: "Fix CPU collection blocking behavior"
+      refs: ["agent/internal/collector/cpu.go"]
+  future:
+    - action: "Align project structure with pkg/ convention"
+      refs: ["agent/internal/"]

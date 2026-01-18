@@ -57,6 +57,12 @@ func main() {
 	log.Printf("Configuration: TenantID=%s, AgentID=%s, CollectionInterval=%v",
 		config.TenantID, config.AgentID, config.CollectionInterval)
 
+	// Warm-up CPU collector to initialize baseline measurement
+	// This prevents the first metric broadcast from showing 0% CPU
+	log.Println("Warming up CPU collector...")
+	collector.CollectCPU()
+	time.Sleep(100 * time.Millisecond)
+
 	// Create a ticker for periodic collection
 	ticker := time.NewTicker(config.CollectionInterval)
 	defer ticker.Stop()
