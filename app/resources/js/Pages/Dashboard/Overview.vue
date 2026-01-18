@@ -43,10 +43,30 @@
                   <p class="text-sm text-gray-500 font-mono">{{ agent.id }}</p>
                 </div>
               </div>
-              <div class="flex items-center gap-2 px-3 py-1 bg-green-500/10 border border-green-500 rounded-full">
-                <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span class="text-xs text-green-400 font-medium">{{ agent.status }}</span>
+              <div
+                class="flex items-center gap-2 px-3 py-1 rounded-full"
+                :class="agent.status === 'Online'
+                  ? 'bg-green-500/10 border border-green-500'
+                  : 'bg-gray-500/10 border border-gray-500'"
+              >
+                <div
+                  class="w-2 h-2 rounded-full"
+                  :class="agent.status === 'Online'
+                    ? 'bg-green-500 animate-pulse'
+                    : 'bg-gray-500'"
+                ></div>
+                <span
+                  class="text-xs font-medium"
+                  :class="agent.status === 'Online' ? 'text-green-400' : 'text-gray-400'"
+                >
+                  {{ agent.status }}
+                </span>
               </div>
+            </div>
+
+            <div class="mt-4 mb-2">
+              <p class="text-xs text-gray-500">Last Seen</p>
+              <p class="text-sm text-gray-300 font-mono mt-1">{{ agent.last_seen }}</p>
             </div>
 
             <div class="flex items-center text-sm text-gray-400 group-hover:text-noc-primary transition-colors">
@@ -68,6 +88,7 @@ import { Server, ChevronRight } from 'lucide-vue-next'
 interface Agent {
   id: string
   status: string
+  last_seen: string
 }
 
 interface Tenant {

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Metric;
 use App\Models\Tenant;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -33,13 +34,18 @@ class DashboardController extends Controller
          * TODO: Implement an Agent registry or cached list to avoid full table scans.
          */
         $agents = Metric::where('tenant_id', $tenant->id)
-            ->select('agent_id')
-            ->distinct()
+            ->select('agent_id', DB::raw('MAX(timestamp) as last_seen'))
+            ->groupBy('agent_id')
             ->get()
             ->map(function ($metric) {
+                $lastSeenTimestamp = strtotime($metric->last_seen);
+                $currentTimestamp = time();
+                $secondsSinceLastSeen = $currentTimestamp - $lastSeenTimestamp;
+
                 return [
                     'id' => $metric->agent_id,
-                    'status' => 'Online', // Placeholder: Future implementation should check heartbeats
+                    'status' => $secondsSinceLastSeen <= 60 ? 'Online' : 'Offline',
+                    'last_seen' => $metric->last_seen,
                 ];
             });
 

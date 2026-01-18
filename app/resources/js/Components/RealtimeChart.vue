@@ -9,6 +9,7 @@ const props = defineProps<{
     label: string;
     color?: string;
     maxPoints?: number;
+    agentId?: string;
 }>();
 
 const chartCanvas = ref<HTMLCanvasElement | null>(null);
@@ -82,15 +83,25 @@ const initChart = () => {
 };
 
 const handleData = (data: any) => {
-    // Expect data format: { metric: 'name', value: 123, timestamp: '...' }
-    if (!data || !data.metric || data.value === undefined) return;
-    
-    // Check if data matches our metric
-    if (data.metric === props.metricName) {
-        if (!chartInstance) return;
+    // Handle both array format (from ProcessMetricSubmission) and single object format
+    const metrics = Array.isArray(data) ? data : [data];
 
-        const timestamp = new Date().toLocaleTimeString(); 
-        const value = Number(data.value);
+    for (const item of metrics) {
+        // Support both 'metric_name' (new format) and 'metric' (legacy format)
+        const metricName = item.metric_name || item.metric;
+
+        if (!item || !metricName || item.value === undefined) continue;
+
+        // Check if data matches our metric
+        if (metricName !== props.metricName) continue;
+
+        // Filter by agent_id if agentId prop is provided
+        if (props.agentId && item.agent_id !== props.agentId) continue;
+
+        if (!chartInstance) continue;
+
+        const timestamp = new Date().toLocaleTimeString();
+        const value = Number(item.value);
 
         // Add Data
         chartInstance.data.labels?.push(timestamp);
@@ -104,7 +115,7 @@ const handleData = (data: any) => {
 
         // Optimized update
         chartInstance.update('none');
-        
+
         lastDataTime = Date.now();
         isLive.value = true;
         hasError.value = false;

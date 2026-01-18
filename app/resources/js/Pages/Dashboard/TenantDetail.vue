@@ -61,51 +61,51 @@
         </div>
       </div>
 
-      <!-- Metrics Placeholders -->
+      <!-- Metrics Charts -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <!-- CPU Chart Placeholder -->
-        <div class="bg-noc-card rounded-lg p-6 border border-gray-800">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold text-white">CPU Usage</h3>
+        <!-- CPU Chart -->
+        <div>
+          <div class="flex items-center gap-2 mb-3">
             <Cpu :size="20" class="text-noc-primary" />
+            <h3 class="text-lg font-semibold text-white">CPU Usage</h3>
           </div>
-          <div class="h-48 flex items-center justify-center border-2 border-dashed border-gray-700 rounded-lg">
-            <div class="text-center">
-              <BarChart3 :size="48" class="mx-auto text-gray-600 mb-2" />
-              <p class="text-gray-500 text-sm">Chart Placeholder</p>
-              <p class="text-gray-600 text-xs mt-1">Future Implementation</p>
-            </div>
-          </div>
+          <RealtimeChart
+            :tenantId="tenant.id"
+            metricName="cpu.usage.percent"
+            label="CPU %"
+            color="rgb(59, 130, 246)"
+            :agentId="agent_id || undefined"
+          />
         </div>
 
-        <!-- Memory Chart Placeholder -->
-        <div class="bg-noc-card rounded-lg p-6 border border-gray-800">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold text-white">Memory Usage</h3>
+        <!-- Memory Chart -->
+        <div>
+          <div class="flex items-center gap-2 mb-3">
             <MemoryStick :size="20" class="text-noc-primary" />
+            <h3 class="text-lg font-semibold text-white">Memory Usage</h3>
           </div>
-          <div class="h-48 flex items-center justify-center border-2 border-dashed border-gray-700 rounded-lg">
-            <div class="text-center">
-              <BarChart3 :size="48" class="mx-auto text-gray-600 mb-2" />
-              <p class="text-gray-500 text-sm">Chart Placeholder</p>
-              <p class="text-gray-600 text-xs mt-1">Future Implementation</p>
-            </div>
-          </div>
+          <RealtimeChart
+            :tenantId="tenant.id"
+            metricName="memory.used.bytes"
+            label="Memory (bytes)"
+            color="rgb(34, 197, 94)"
+            :agentId="agent_id || undefined"
+          />
         </div>
 
-        <!-- Disk Chart Placeholder -->
-        <div class="bg-noc-card rounded-lg p-6 border border-gray-800">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold text-white">Disk Usage</h3>
+        <!-- Disk Chart -->
+        <div>
+          <div class="flex items-center gap-2 mb-3">
             <HardDrive :size="20" class="text-noc-primary" />
+            <h3 class="text-lg font-semibold text-white">Disk Usage</h3>
           </div>
-          <div class="h-48 flex items-center justify-center border-2 border-dashed border-gray-700 rounded-lg">
-            <div class="text-center">
-              <BarChart3 :size="48" class="mx-auto text-gray-600 mb-2" />
-              <p class="text-gray-500 text-sm">Chart Placeholder</p>
-              <p class="text-gray-600 text-xs mt-1">Future Implementation</p>
-            </div>
-          </div>
+          <RealtimeChart
+            :tenantId="tenant.id"
+            metricName="disk.usage.percent"
+            label="Disk %"
+            color="rgb(168, 85, 247)"
+            :agentId="agent_id || undefined"
+          />
         </div>
       </div>
 
@@ -113,8 +113,8 @@
       <div class="bg-noc-card rounded-lg p-6 border border-gray-800">
         <h3 class="text-lg font-semibold text-white mb-4">Metrics Overview</h3>
         <p class="text-gray-400 text-sm">
-          Real-time metrics charts will be implemented in future stories.
-          This view currently serves as a layout placeholder for the upcoming visualization features.
+          Real-time metrics are displayed above for {{ agent_id ? `agent ${agent_id}` : 'all agents' }}.
+          Charts automatically update when new data is received via SSE connection.
         </p>
       </div>
     </div>
@@ -125,7 +125,8 @@
 import { ref } from 'vue'
 import { Link } from '@inertiajs/vue3'
 import DashboardLayout from '@/Layouts/DashboardLayout.vue'
-import { ChevronLeft, Cpu, MemoryStick, HardDrive, BarChart3 } from 'lucide-vue-next'
+import RealtimeChart from '@/Components/RealtimeChart.vue'
+import { ChevronLeft, Cpu, MemoryStick, HardDrive } from 'lucide-vue-next'
 
 interface Tenant {
   id: string

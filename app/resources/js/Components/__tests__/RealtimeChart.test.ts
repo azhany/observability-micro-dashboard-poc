@@ -156,6 +156,19 @@ describe('RealtimeChart', () => {
             expect(wrapper.props('maxPoints')).toBeUndefined();
             // Default is handled internally in component
         });
+
+        it('should accept optional agentId prop', () => {
+            const wrapper = mount(RealtimeChart, {
+                props: {
+                    tenantId: 'test-tenant',
+                    metricName: 'cpu',
+                    label: 'CPU Usage',
+                    agentId: 'agent-123',
+                },
+            });
+
+            expect(wrapper.props('agentId')).toBe('agent-123');
+        });
     });
 
     describe('Live Indicator', () => {
@@ -303,6 +316,135 @@ describe('RealtimeChart', () => {
 
             // Should not crash
             expect(wrapper.exists()).toBe(true);
+        });
+
+        it('should process data with metric_name key (new format)', async () => {
+            const wrapper = mount(RealtimeChart, {
+                props: {
+                    tenantId: 'test-tenant',
+                    metricName: 'cpu.usage.percent',
+                    label: 'CPU Usage',
+                },
+            });
+
+            const metricData = {
+                agent_id: 'agent-1',
+                metric_name: 'cpu.usage.percent',
+                value: 85.2,
+                timestamp: '2026-01-18T00:00:00Z',
+            };
+
+            // Simulate message event
+            (StreamService as any).__simulateEvent('message', metricData);
+            await wrapper.vm.$nextTick();
+
+            // Should update to live status
+            expect(wrapper.text()).toContain('LIVE');
+        });
+
+        it('should process array format data (from ProcessMetricSubmission)', async () => {
+            const wrapper = mount(RealtimeChart, {
+                props: {
+                    tenantId: 'test-tenant',
+                    metricName: 'memory.used.bytes',
+                    label: 'Memory Usage',
+                },
+            });
+
+            const metricData = [
+                {
+                    agent_id: 'agent-1',
+                    metric_name: 'cpu.usage.percent',
+                    value: 75.5,
+                    timestamp: '2026-01-18T00:00:00Z',
+                },
+                {
+                    agent_id: 'agent-1',
+                    metric_name: 'memory.used.bytes',
+                    value: 1024000,
+                    timestamp: '2026-01-18T00:00:00Z',
+                },
+            ];
+
+            // Simulate message event with array
+            (StreamService as any).__simulateEvent('message', metricData);
+            await wrapper.vm.$nextTick();
+
+            // Should update to live status (matched memory metric)
+            expect(wrapper.text()).toContain('LIVE');
+        });
+
+        it('should filter by agent_id when agentId prop is provided', async () => {
+            const wrapper = mount(RealtimeChart, {
+                props: {
+                    tenantId: 'test-tenant',
+                    metricName: 'cpu.usage.percent',
+                    label: 'CPU Usage',
+                    agentId: 'agent-1',
+                },
+            });
+
+            const matchingData = {
+                agent_id: 'agent-1',
+                metric_name: 'cpu.usage.percent',
+                value: 75.5,
+                timestamp: '2026-01-18T00:00:00Z',
+            };
+
+            // Simulate message event
+            (StreamService as any).__simulateEvent('message', matchingData);
+            await wrapper.vm.$nextTick();
+
+            // Should update to live status
+            expect(wrapper.text()).toContain('LIVE');
+        });
+
+        it('should ignore data from different agent when agentId prop is provided', async () => {
+            const wrapper = mount(RealtimeChart, {
+                props: {
+                    tenantId: 'test-tenant',
+                    metricName: 'cpu.usage.percent',
+                    label: 'CPU Usage',
+                    agentId: 'agent-1',
+                },
+            });
+
+            const differentAgentData = {
+                agent_id: 'agent-2',
+                metric_name: 'cpu.usage.percent',
+                value: 75.5,
+                timestamp: '2026-01-18T00:00:00Z',
+            };
+
+            // Simulate message event
+            (StreamService as any).__simulateEvent('message', differentAgentData);
+            await wrapper.vm.$nextTick();
+
+            // Should remain connecting since data is from different agent
+            expect(wrapper.text()).toContain('CONNECTING');
+        });
+
+        it('should accept data without agent_id when agentId prop is not provided', async () => {
+            const wrapper = mount(RealtimeChart, {
+                props: {
+                    tenantId: 'test-tenant',
+                    metricName: 'cpu.usage.percent',
+                    label: 'CPU Usage',
+                },
+            });
+
+            const dataWithoutAgentId = {
+                metric_name: 'cpu.usage.percent',
+                value: 65.3,
+                timestamp: '2026-01-18T00:00:00Z',
+            };
+
+            // Simulate message event
+            (StreamService as any).__simulateEvent('message', dataWithoutAgentId);
+            await wrapper.vm.$nextTick();
+
+            // Should update to live status
+            expect(wrapper.text()).toContain('LIVE');
         });
     });
 
