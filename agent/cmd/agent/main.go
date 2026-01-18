@@ -10,6 +10,7 @@ import (
 
 	"observability-agent/internal/collector"
 	"observability-agent/internal/models"
+	"observability-agent/internal/publisher"
 )
 
 // Config holds the agent configuration
@@ -17,6 +18,10 @@ type Config struct {
 	CollectionInterval time.Duration
 	AgentID            string
 	TenantID           string
+	MQTTBroker         string
+	MQTTPort           int
+	MQTTUser           string
+	MQTTPass           string
 }
 
 // LoadConfig loads configuration from environment variables
@@ -42,10 +47,37 @@ func LoadConfig() *Config {
 		tenantID = "tenant-default"
 	}
 
+	// Read MQTT configuration from ENV
+	mqttBroker := os.Getenv("MQTT_BROKER")
+	if mqttBroker == "" {
+		mqttBroker = "localhost"
+	}
+
+	mqttPort := 1883
+	if portStr := os.Getenv("MQTT_PORT"); portStr != "" {
+		if port, err := strconv.Atoi(portStr); err == nil && port > 0 {
+			mqttPort = port
+		}
+	}
+
+	mqttUser := os.Getenv("MQTT_USER")
+	if mqttUser == "" {
+		mqttUser = "bridge_user"
+	}
+
+	mqttPass := os.Getenv("MQTT_PASS")
+	if mqttPass == "" {
+		mqttPass = "bridge_pass"
+	}
+
 	return &Config{
 		CollectionInterval: interval,
 		AgentID:            agentID,
 		TenantID:           tenantID,
+		MQTTBroker:         mqttBroker,
+		MQTTPort:           mqttPort,
+		MQTTUser:           mqttUser,
+		MQTTPass:           mqttPass,
 	}
 }
 
@@ -56,6 +88,19 @@ func main() {
 	config := LoadConfig()
 	log.Printf("Configuration: TenantID=%s, AgentID=%s, CollectionInterval=%v",
 		config.TenantID, config.AgentID, config.CollectionInterval)
+
+	// Initialize MQTT publisher
+	pub, err := publisher.New(&publisher.Config{
+		Broker:   config.MQTTBroker,
+		Port:     config.MQTTPort,
+		Username: config.MQTTUser,
+		Password: config.MQTTPass,
+		ClientID: fmt.Sprintf("agent-%s", config.AgentID),
+	})
+	if err != nil {
+		log.Fatalf("Failed to initialize MQTT publisher: %v", err)
+	}
+	defer pub.Close()
 
 	// Warm-up CPU collector to initialize baseline measurement
 	// This prevents the first metric broadcast from showing 0% CPU
@@ -68,16 +113,16 @@ func main() {
 	defer ticker.Stop()
 
 	// Run collection immediately on startup
-	collectAndPrint(config)
+	collectAndPublish(config, pub)
 
 	// Main collection loop
 	for range ticker.C {
-		collectAndPrint(config)
+		collectAndPublish(config, pub)
 	}
 }
 
-// collectAndPrint collects metrics from all collectors and prints them to stdout
-func collectAndPrint(config *Config) {
+// collectAndPublish collects metrics from all collectors and publishes them to MQTT
+func collectAndPublish(config *Config, pub *publisher.Publisher) {
 	var metrics []*models.Metric
 
 	// Collect CPU
@@ -116,8 +161,14 @@ func collectAndPrint(config *Config) {
 		))
 	}
 
-	// Print each metric as JSON to stdout
+	// Publish each metric to MQTT and print to stdout for debugging
 	for _, metric := range metrics {
+		// Publish to MQTT
+		if err := pub.Publish(metric); err != nil {
+			log.Printf("Error publishing metric %s: %v", metric.MetricName, err)
+		}
+
+		// Also print to stdout for debugging
 		if jsonData, err := json.Marshal(metric); err != nil {
 			log.Printf("Error marshaling metric: %v", err)
 		} else {
