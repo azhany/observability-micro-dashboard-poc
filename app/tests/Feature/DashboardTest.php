@@ -231,7 +231,7 @@ class DashboardTest extends TestCase
 
         // The current controller logic picks Tenant::first(), so we ensure tenant1 is first
         // by creating it first or manipulating the query if needed, but for PoC it's fine.
-        
+
         $response = $this->get('/dashboard');
 
         $response->assertStatus(200);

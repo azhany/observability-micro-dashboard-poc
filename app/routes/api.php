@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\MetricController;
 use App\Http\Controllers\Api\MetricIngestionController;
 use Illuminate\Support\Facades\Route;
 
@@ -16,4 +17,7 @@ Route::prefix('v1')->middleware('auth.tenant')->group(function () {
 
     // Metric Ingestion API
     Route::post('/metrics', [MetricIngestionController::class, 'store'])->middleware('throttle:60,1');
+
+    // Metric Query API with resolution support
+    Route::get('/metrics', [MetricController::class, 'index']);
 });

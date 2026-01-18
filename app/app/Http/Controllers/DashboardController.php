@@ -39,7 +39,7 @@ class DashboardController extends Controller
             ->get()
             ->map(function ($metric) {
                 $lastSeen = \Illuminate\Support\Carbon::parse($metric->last_seen);
-                
+
                 return [
                     'id' => $metric->agent_id,
                     'status' => $lastSeen->diffInSeconds(now()) <= 60 ? 'Online' : 'Offline',
@@ -66,7 +66,7 @@ class DashboardController extends Controller
          * SEC-001: Multi-tenant Isolation
          * Verify that the requested tenant ID matches the authenticated user's tenant.
          */
-        if (!$currentTenant || $currentTenant->id !== $tenant) {
+        if (! $currentTenant || $currentTenant->id !== $tenant) {
             abort(403, 'Unauthorized access to tenant data.');
         }
 
