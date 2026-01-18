@@ -16,3 +16,6 @@ Schedule::command('metrics:downsample 5m')->everyFiveMinutes();
 
 // Schedule metric cleanup to run daily at 2 AM
 Schedule::command('metrics:cleanup')->dailyAt('02:00');
+
+// Schedule alert rule evaluation to run every 30 seconds
+Schedule::job(new \App\Jobs\EvaluateAlertRules)->everyThirtySeconds();
