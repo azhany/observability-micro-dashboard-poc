@@ -195,4 +195,48 @@ class AlertQueryApiTest extends TestCase
 
         $response->assertStatus(422);
     }
+
+    public function test_uses_higher_limit_for_time_range_queries(): void
+    {
+        $now = Carbon::now();
+
+        // Query without time range should return limit: 100
+        $response1 = $this->withToken($this->apiToken)
+            ->withHeaders(['X-Tenant-ID' => $this->tenant->id])
+            ->getJson('/api/v1/alerts');
+
+        $response1->assertOk()
+            ->assertJsonPath('limit', 100)
+            ->assertJsonStructure(['count', 'data', 'limit', 'has_more']);
+
+        // Query with time range should return limit: 1000
+        $response2 = $this->withToken($this->apiToken)
+            ->withHeaders(['X-Tenant-ID' => $this->tenant->id])
+            ->getJson('/api/v1/alerts?start_time='.$now->copy()->subWeek()->toDateTimeString());
+
+        $response2->assertOk()
+            ->assertJsonPath('limit', 1000)
+            ->assertJsonPath('has_more', false);
+    }
+
+    public function test_indicates_when_results_are_truncated(): void
+    {
+        // Create exactly 100 alerts
+        for ($i = 0; $i < 100; $i++) {
+            Alert::factory()->create([
+                'tenant_id' => $this->tenant->id,
+                'alert_rule_id' => $this->alertRule->id,
+                'state' => 'FIRING',
+            ]);
+        }
+
+        // Query without time range (limit 100)
+        $response = $this->withToken($this->apiToken)
+            ->withHeaders(['X-Tenant-ID' => $this->tenant->id])
+            ->getJson('/api/v1/alerts');
+
+        $response->assertOk()
+            ->assertJsonPath('count', 100)
+            ->assertJsonPath('has_more', true); // Exactly at limit, might have more
+    }
 }

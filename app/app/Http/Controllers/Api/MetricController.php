@@ -19,6 +19,7 @@ class MetricController extends Controller
         $validated = $request->validate([
             'resolution' => 'nullable|in:raw,1m,5m',
             'metric_name' => 'nullable|string|max:64',
+            'agent_id' => 'nullable|string|max:64',
             'start_time' => 'nullable|date',
             'end_time' => 'nullable|date',
         ]);
@@ -36,6 +37,7 @@ class MetricController extends Controller
         $query = DB::table($table)
             ->select(
                 'metric_name',
+                'agent_id',
                 DB::raw("CAST({$valueColumn} AS DECIMAL(16,4)) as value"),
                 "{$timeColumn} as timestamp"
             )
@@ -44,6 +46,11 @@ class MetricController extends Controller
         // Filter by metric name if provided
         if (! empty($validated['metric_name'])) {
             $query->where('metric_name', $validated['metric_name']);
+        }
+
+        // Filter by agent_id if provided
+        if (! empty($validated['agent_id'])) {
+            $query->where('agent_id', $validated['agent_id']);
         }
 
         // Filter by time range if provided

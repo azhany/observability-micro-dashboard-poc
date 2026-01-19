@@ -39,6 +39,8 @@ export interface AlertQueryParams {
 export interface AlertResponse {
     count: number;
     data: AlertDataPoint[];
+    limit?: number;
+    has_more?: boolean;
 }
 
 class MetricService {
@@ -59,6 +61,9 @@ class MetricService {
         }
         if (params.metric_name) {
             queryParams.append('metric_name', params.metric_name);
+        }
+        if (params.agent_id) {
+            queryParams.append('agent_id', params.agent_id);
         }
         if (params.start_time) {
             queryParams.append('start_time', params.start_time);
@@ -81,17 +86,7 @@ class MetricService {
             throw new Error(`Failed to fetch metrics: ${response.statusText}`);
         }
 
-        const data = await response.json();
-
-        // Filter by agent_id if provided (client-side filtering)
-        if (params.agent_id && data.data) {
-            data.data = data.data.filter((item: any) =>
-                !item.agent_id || item.agent_id === params.agent_id
-            );
-            data.count = data.data.length;
-        }
-
-        return data;
+        return await response.json();
     }
 
     /**

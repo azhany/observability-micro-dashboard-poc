@@ -315,4 +315,43 @@ class MetricQueryApiTest extends TestCase
                 'data' => [],
             ]);
     }
+
+    public function test_query_filters_by_agent_id(): void
+    {
+        // Create metrics for different agents
+        Metric::create([
+            'tenant_id' => $this->tenant->id,
+            'agent_id' => 'agent-001',
+            'metric_name' => 'cpu_usage',
+            'value' => 50.0,
+            'timestamp' => Carbon::now(),
+        ]);
+
+        Metric::create([
+            'tenant_id' => $this->tenant->id,
+            'agent_id' => 'agent-002',
+            'metric_name' => 'cpu_usage',
+            'value' => 75.0,
+            'timestamp' => Carbon::now(),
+        ]);
+
+        Metric::create([
+            'tenant_id' => $this->tenant->id,
+            'agent_id' => 'agent-003',
+            'metric_name' => 'cpu_usage',
+            'value' => 90.0,
+            'timestamp' => Carbon::now(),
+        ]);
+
+        // Query for specific agent
+        $response = $this->withHeaders([
+            'Authorization' => 'Bearer '.$this->apiToken,
+        ])->getJson('/api/v1/metrics?agent_id=agent-002');
+
+        $response->assertStatus(200)
+            ->assertJson(['count' => 1])
+            ->assertJsonPath('data.0.agent_id', 'agent-002');
+
+        $this->assertEquals(75.0, $response->json('data.0.value'));
+    }
 }

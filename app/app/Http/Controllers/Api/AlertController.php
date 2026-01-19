@@ -52,9 +52,19 @@ class AlertController extends Controller
             $query->where('started_at', '<=', Carbon::parse($validated['end_time']));
         }
 
+        // Calculate appropriate limit based on time range
+        // If no time range specified, use conservative limit of 100
+        // If time range specified, allow more results (up to 1000) to ensure coverage
+        $limit = 100;
+        if (!empty($validated['start_time']) || !empty($validated['end_time'])) {
+            // For historical queries with time range, allow up to 1000 results
+            // This ensures 7-day views aren't truncated on noisy systems
+            $limit = 1000;
+        }
+
         // Order by most recent first
         $alerts = $query->orderBy('started_at', 'desc')
-            ->limit(100)
+            ->limit($limit)
             ->get()
             ->map(function ($alert) {
                 return [
@@ -71,6 +81,8 @@ class AlertController extends Controller
         return response()->json([
             'count' => $alerts->count(),
             'data' => $alerts,
+            'limit' => $limit,
+            'has_more' => $alerts->count() === $limit,
         ]);
     }
 }
