@@ -94,7 +94,7 @@ graph TD
 │   └── database/       # Migrations & Rollup Logic
 ├── agent/              # Go-based System Agent
 ├── docs/               # Detailed PRDs, Architecture, and Stories
-├── infrastructure/     # Configs for Mosquitto, Redis, etc.
+├── docker/             # Configs for Mosquitto, Redis, etc.
 └── docker-compose.yml  # Local Development Environment
 ```
 

@@ -5,17 +5,66 @@ import StreamService from '@/Services/StreamService';
 
 // Mock Chart.js
 vi.mock('chart.js/auto', () => {
+    const ChartMock = vi.fn().mockImplementation(() => ({
+        data: {
+            labels: [],
+            datasets: [{
+                data: [],
+            }],
+        },
+        options: {
+            plugins: {
+                annotation: {
+                    annotations: {}
+                }
+            }
+        },
+        update: vi.fn(),
+        destroy: vi.fn(),
+    }));
+
+    ChartMock.register = vi.fn();
+
     return {
-        default: vi.fn().mockImplementation(() => ({
-            data: {
-                labels: [],
-                datasets: [{
-                    data: [],
-                }],
-            },
-            update: vi.fn(),
-            destroy: vi.fn(),
-        })),
+        default: ChartMock,
+    };
+});
+
+// Mock chartjs-plugin-annotation
+vi.mock('chartjs-plugin-annotation', () => {
+    return {
+        default: {}
+    };
+});
+
+// Mock MetricService
+vi.mock('@/Services/MetricService', () => {
+    return {
+        default: {
+            fetchHistoricalMetrics: vi.fn().mockResolvedValue({
+                resolution: '1m',
+                count: 0,
+                data: []
+            }),
+            fetchAlerts: vi.fn().mockResolvedValue({
+                count: 0,
+                data: []
+            }),
+            getTimeRangeForHours: vi.fn((hours: number) => ({
+                start_time: new Date(Date.now() - hours * 60 * 60 * 1000).toISOString(),
+                end_time: new Date().toISOString()
+            }))
+        }
+    };
+});
+
+// Mock TimeRangeSelector
+vi.mock('@/Components/TimeRangeSelector.vue', () => {
+    return {
+        default: {
+            name: 'TimeRangeSelector',
+            template: '<div></div>'
+        }
     };
 });
 
@@ -219,7 +268,7 @@ describe('RealtimeChart', () => {
             (StreamService as any).__simulateEvent('error', new Error('Connection lost'));
             await wrapper.vm.$nextTick();
 
-            expect(wrapper.text()).toContain('OFFLINE');
+            expect(wrapper.text()).toContain('ERROR');
         });
 
         it('should have pulsing animation when live', async () => {
