@@ -1,0 +1,48 @@
+schema: 1
+story: "4.4"
+story_title: "Historical Trend Charting"
+gate: CONCERNS
+status_reason: "Functionally complete but has data consistency risks (Agent Filtering) and potential data truncation (Alert Limits)."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-01-20T10:00:00Z"
+
+waiver: { active: false }
+
+top_issues:
+  - id: "DATA-001"
+    severity: medium
+    finding: "Historical data view fails to filter by agent_id because API response lacks the field"
+    suggested_action: "Update MetricController to include agent_id in response and support server-side filtering"
+    suggested_owner: "dev"
+  - id: "DATA-002"
+    severity: medium
+    finding: "Alert history limited to 100 records, which may be insufficient for 7-day view"
+    suggested_action: "Implement smart sampling or increase limit for longer time ranges"
+    suggested_owner: "dev"
+
+risk_summary:
+  totals: { critical: 0, high: 0, medium: 2, low: 1 }
+  recommendations:
+    must_fix: []
+    monitor: ["Alert volume in production", "Chart rendering performance"]
+
+evidence:
+  tests_reviewed: 11
+  risks_identified: 3
+  trace:
+    ac_covered: [1, 2, 3, 4]
+    ac_gaps: []
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: "Tenant isolation and auth enforcement verified"
+  performance:
+    status: CONCERNS
+    notes: "Potential client-side filtering inefficiency and chart rendering with many alerts"
+  reliability:
+    status: PASS
+    notes: "Graceful error handling in historical data fetching"
+  maintainability:
+    status: PASS
+    notes: "Clean separation of concerns in frontend components"
