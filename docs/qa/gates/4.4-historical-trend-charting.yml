@@ -1,34 +1,24 @@
 schema: 1
 story: "4.4"
 story_title: "Historical Trend Charting"
-gate: CONCERNS
-status_reason: "Functionally complete but has data consistency risks (Agent Filtering) and potential data truncation (Alert Limits)."
+gate: PASS
+status_reason: "Critical issues with agent filtering and alert limits have been resolved."
 reviewer: "Quinn (Test Architect)"
-updated: "2026-01-20T10:00:00Z"
+updated: "2026-01-20T10:30:00Z"
 
 waiver: { active: false }
 
-top_issues:
-  - id: "DATA-001"
-    severity: medium
-    finding: "Historical data view fails to filter by agent_id because API response lacks the field"
-    suggested_action: "Update MetricController to include agent_id in response and support server-side filtering"
-    suggested_owner: "dev"
-  - id: "DATA-002"
-    severity: medium
-    finding: "Alert history limited to 100 records, which may be insufficient for 7-day view"
-    suggested_action: "Implement smart sampling or increase limit for longer time ranges"
-    suggested_owner: "dev"
+top_issues: []
 
 risk_summary:
-  totals: { critical: 0, high: 0, medium: 2, low: 1 }
+  totals: { critical: 0, high: 0, medium: 0, low: 1 }
   recommendations:
     must_fix: []
-    monitor: ["Alert volume in production", "Chart rendering performance"]
+    monitor: ["Chart rendering performance with high alert volume"]
 
 evidence:
-  tests_reviewed: 11
-  risks_identified: 3
+  tests_reviewed: 14
+  risks_identified: 1
   trace:
     ac_covered: [1, 2, 3, 4]
     ac_gaps: []
@@ -36,13 +26,13 @@ evidence:
 nfr_validation:
   security:
     status: PASS
-    notes: "Tenant isolation and auth enforcement verified"
+    notes: "Tenant and Agent isolation verified"
   performance:
-    status: CONCERNS
-    notes: "Potential client-side filtering inefficiency and chart rendering with many alerts"
+    status: PASS
+    notes: "Adaptive limits reduce truncation risk while protecting DB"
   reliability:
     status: PASS
-    notes: "Graceful error handling in historical data fetching"
+    notes: "Robust error handling and data consistency"
   maintainability:
     status: PASS
-    notes: "Clean separation of concerns in frontend components"
+    notes: "Codebase is clean and well-tested"
