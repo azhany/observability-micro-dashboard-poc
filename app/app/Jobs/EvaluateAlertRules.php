@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Models\Alert;
 use App\Models\AlertRule;
 use App\Models\Metric;
+use App\Notifications\AlertFiringNotification;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -131,7 +132,7 @@ class EvaluateAlertRules implements ShouldQueue
             $breachDuration = $currentAlert->started_at->diffInSeconds($now);
 
             if ($breachDuration >= $rule->duration) {
-                Alert::create([
+                $newAlert = Alert::create([
                     'tenant_id' => $rule->tenant_id,
                     'alert_rule_id' => $rule->id,
                     'state' => 'FIRING',
@@ -144,6 +145,10 @@ class EvaluateAlertRules implements ShouldQueue
                     'metric_name' => $rule->metric_name,
                     'duration' => $breachDuration,
                 ]);
+
+                // Dispatch notification on state transition to FIRING
+                $newAlert->load('alertRule.tenant');
+                $rule->tenant->notify(new AlertFiringNotification($newAlert, $recentMetrics->first()));
             }
 
             return;

@@ -7,10 +7,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Notifications\Notifiable;
 
 class Tenant extends Model
 {
-    use HasFactory, HasUuids;
+    use HasFactory, HasUuids, Notifiable;
 
     protected $fillable = [
         'name',
@@ -32,5 +33,15 @@ class Tenant extends Model
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class)->withTimestamps();
+    }
+
+    /**
+     * Route notifications for the mail channel.
+     */
+    public function routeNotificationForMail(): string
+    {
+        $settings = $this->settings ?? [];
+
+        return $settings['notification_email'] ?? 'admin@example.com';
     }
 }
