@@ -1,0 +1,49 @@
+# <!-- Powered by BMAD™ Core -->
+schema: 1
+story: "4.3"
+story_title: "Notification Dispatch (Webhook & Email)"
+gate: "PASS"
+status_reason: "Feature is fully implemented with comprehensive test coverage. Refactored to support async queuing and idiomatic channel logic."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-01-19T10:30:00Z"
+
+# Always present but only active when WAIVED
+waiver: { active: false }
+
+# Issues (if any) - Use fixed severity: low | medium | high
+top_issues:
+  - id: "SEC-001"
+    severity: medium
+    finding: "Webhook dispatch lacks SSRF protection."
+    suggested_action: "Implement URL validation/filtering before production release."
+    suggested_owner: "dev"
+
+evidence:
+  tests_reviewed: 8
+  risks_identified: 1
+  trace:
+    ac_covered: [1, 2, 3, 4]
+    ac_gaps: []
+
+nfr_validation:
+  security: 
+    status: CONCERNS
+    notes: "SSRF risk on webhook URLs needs mitigation for production."
+  performance: 
+    status: PASS
+    notes: "Notifications are queued; evaluation job optimized with eager loading."
+  reliability: 
+    status: PASS
+    notes: "Uses Laravel's robust notification system with logging."
+  maintainability: 
+    status: PASS
+    notes: "Idiomatic implementation using custom Channels."
+
+quality_score: 90
+
+recommendations:
+  immediate:
+    - action: "Ensure queue workers are running to process notifications."
+  future:
+    - action: "Add SSRF protection for webhooks."
+    - action: "Add circuit breaker or retry limits for webhook endpoints."

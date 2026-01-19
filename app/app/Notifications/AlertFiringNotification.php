@@ -5,12 +5,11 @@ namespace App\Notifications;
 use App\Models\Alert;
 use App\Models\Metric;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
 
-class AlertFiringNotification extends Notification
+class AlertFiringNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
@@ -63,18 +62,11 @@ class AlertFiringNotification extends Notification
     }
 
     /**
-     * Send webhook notification.
+     * Get the webhook representation of the notification.
      */
-    public function toWebhook(object $notifiable): void
+    public function toWebhook(object $notifiable): array
     {
-        $settings = $notifiable->settings ?? [];
-        $webhookUrl = $settings['webhook_url'] ?? null;
-
-        if (! $webhookUrl) {
-            return;
-        }
-
-        $payload = [
+        return [
             'tenant_name' => $notifiable->name,
             'metric_name' => $this->alert->alertRule->metric_name,
             'value' => $this->metric->value,
@@ -83,31 +75,5 @@ class AlertFiringNotification extends Notification
             'timestamp' => $this->alert->started_at->toIso8601String(),
             'alert_id' => $this->alert->id,
         ];
-
-        try {
-            $response = Http::timeout(10)->post($webhookUrl, $payload);
-
-            if ($response->successful()) {
-                Log::info('Webhook notification sent successfully', [
-                    'tenant_id' => $notifiable->id,
-                    'alert_id' => $this->alert->id,
-                    'webhook_url' => $webhookUrl,
-                ]);
-            } else {
-                Log::warning('Webhook notification failed', [
-                    'tenant_id' => $notifiable->id,
-                    'alert_id' => $this->alert->id,
-                    'webhook_url' => $webhookUrl,
-                    'status' => $response->status(),
-                ]);
-            }
-        } catch (\Exception $e) {
-            Log::error('Webhook notification exception', [
-                'tenant_id' => $notifiable->id,
-                'alert_id' => $this->alert->id,
-                'webhook_url' => $webhookUrl,
-                'error' => $e->getMessage(),
-            ]);
-        }
     }
 }

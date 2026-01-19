@@ -24,7 +24,7 @@ class EvaluateAlertRules implements ShouldQueue
     {
         $count = 0;
 
-        foreach (AlertRule::cursor() as $rule) {
+        foreach (AlertRule::with('tenant')->cursor() as $rule) {
             $this->evaluateRule($rule);
             $count++;
         }
@@ -147,7 +147,6 @@ class EvaluateAlertRules implements ShouldQueue
                 ]);
 
                 // Dispatch notification on state transition to FIRING
-                $newAlert->load('alertRule.tenant');
                 $rule->tenant->notify(new AlertFiringNotification($newAlert, $recentMetrics->first()));
             }
 
