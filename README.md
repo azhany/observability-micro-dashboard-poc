@@ -100,6 +100,16 @@ graph TD
 
 ---
 
+## 🎥 Demo
+
+See the system in action (E2E Test Recording). This demonstrates the full flow: Login -> Dashboard -> Latency Check -> Real-time Updates (SSE).
+
+[![End-to-End Demo](docs/assets/demo-screenshot.png)](docs/assets/demo-video.webm)
+
+*Click the image to view the video recording of the automated smoke test.*
+
+---
+
 ## 🚥 Getting Started
 
 ### Prerequisites
@@ -124,7 +134,7 @@ graph TD
     ```bash
     docker compose exec app php artisan migrate --seed
     ```
-6.  **Access the dashboard:** Open `http://localhost` (default credentials in seeds).
+6.  **Access the dashboard:** Open `http://localhost:8080` (default credentials in seeds).
 
 ---
 

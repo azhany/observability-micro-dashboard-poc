@@ -18,7 +18,7 @@ class StreamController extends Controller
 
         // Authorization check: Ensure user has access to this tenant
         $user = auth()->user();
-        if (! $user->tenants()->where('tenants.id', $tenant->id)->exists()) {
+        if (!$user->tenants()->where('tenants.id', $tenant->id)->exists()) {
             abort(403, 'Unauthorized access to tenant stream');
         }
 
@@ -37,54 +37,28 @@ class StreamController extends Controller
             ob_implicit_flush(true);
 
             $redis = Redis::connection();
-            $pubsub = $redis->pubSubLoop();
-            $pubsub->subscribe($channel);
+
+            // Set a read timeout to allow periodic checks (if feasible) or just rely on standard subscribe behavior
+            // Note: Standard subscribe blocks until message received or connection lost.
 
             try {
-                foreach ($pubsub as $message) {
-                    $currentTime = time();
+                $redis->subscribe([$channel], function ($message) {
+                    echo "data: {$message}\n\n";
 
-                    // Check if max duration exceeded
-                    if (($currentTime - $startTime) >= $maxDuration) {
-                        Log::info('SSE stream max duration reached', ['tenant_id' => $tenant->id]);
-                        break;
+                    if (ob_get_level() > 0) {
+                        ob_flush();
                     }
-
-                    // Send heartbeat to keep connection alive
-                    if (($currentTime - $lastHeartbeat) >= $heartbeatInterval) {
-                        echo ": heartbeat\n\n";
-                        $lastHeartbeat = $currentTime;
-
-                        if (ob_get_level() > 0) {
-                            ob_flush();
-                        }
-                        flush();
-                    }
-
-                    if ($message->kind === 'message') {
-                        $data = $message->payload;
-
-                        echo "data: {$data}\n\n";
-
-                        if (ob_get_level() > 0) {
-                            ob_flush();
-                        }
-                        flush();
-
-                        if (connection_aborted()) {
-                            break;
-                        }
-                    }
-                }
+                    flush();
+                });
             } catch (\Exception $e) {
+                // Ignore read errors/timeouts if we implement them, otherwise verify connection
                 Log::error('SSE stream error', [
                     'tenant_id' => $tenant->id,
                     'error' => $e->getMessage(),
                 ]);
-            } finally {
-                $pubsub->unsubscribe();
-                Log::info('SSE stream closed', ['tenant_id' => $tenant->id]);
             }
+
+            Log::info('SSE stream closed', ['tenant_id' => $tenant->id]);
         });
 
         $response->headers->set('Content-Type', 'text/event-stream');
